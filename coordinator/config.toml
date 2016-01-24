@@ -1,0 +1,16 @@
+# Exmpale Config
+
+# IP to listen on
+ip = "127.0.0.1"
+# Port
+port = "8030"
+# Path to the DB file (sqlite at the moment)
+dbpath = "./testdb"
+# Private Key used to sign requests.
+privateKey = "./private.pem"
+
+# Logging Options
+[logging]
+level = 5 # from 1 (fatal only) to 5 (debug)
+verbosity = 0 # At the moment the only difference is that 1 prints a timestamp and 0 does not
+output = "stdout" # stdout is the only methode supported at the moment

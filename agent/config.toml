@@ -1,0 +1,19 @@
+# Example Config
+
+# IP you want the agent's REST api to listen on
+ip = "127.0.0.1"
+# PORT the API shoudl listen on
+port = "8010"
+# Path to a private key the Agent will use to authenticate and sign requests
+privatekey = "./private.pem"
+
+# The coordinator in charge of managing this agent
+[coordinator]
+address = "127.0.0.1:8030" # address to expect connections from
+publicKey = "./publicKey.pem" # used to verify the request signature
+
+#Logging options:
+[logging]
+level = 5 # from 1 (fatal only) to 5 (debug)
+verbosity = 0 # At the moment the only difference is that 1 prints a timestamp and 0 does not
+output = "stdout" # stdout is the only methode supported at the moment
