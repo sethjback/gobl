@@ -3,11 +3,11 @@ package notification
 import (
 	"time"
 
-	"github.com/sethjback/gobble/httpapi"
-	"github.com/sethjback/gobble/keys"
-	"github.com/sethjback/gobble/spec"
-	"github.com/sethjback/gobble/util/log"
-	"github.com/sethjback/gobble/util/try"
+	"github.com/sethjback/gobl/httpapi"
+	"github.com/sethjback/gobl/keys"
+	"github.com/sethjback/gobl/spec"
+	"github.com/sethjback/gobl/util/log"
+	"github.com/sethjback/gobl/util/try"
 )
 
 // Notification must be implemented on messages passed through the notifier

@@ -5,9 +5,9 @@ import (
 	"runtime"
 	"time"
 
-	"github.com/sethjback/gobble/agent/manager"
-	"github.com/sethjback/gobble/httpapi"
-	"github.com/sethjback/gobble/util/log"
+	"github.com/sethjback/gobl/agent/manager"
+	"github.com/sethjback/gobl/httpapi"
+	"github.com/sethjback/gobl/util/log"
 )
 
 func gc(w http.ResponseWriter, r *http.Request) (*httpapi.APIResponse, error) {

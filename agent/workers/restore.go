@@ -4,11 +4,11 @@ import (
 	"bufio"
 	"io"
 
-	"github.com/sethjback/gobble/engines"
-	"github.com/sethjback/gobble/files"
-	"github.com/sethjback/gobble/modifications"
-	"github.com/sethjback/gobble/spec"
-	"github.com/sethjback/gobble/util/log"
+	"github.com/sethjback/gobl/engines"
+	"github.com/sethjback/gobl/files"
+	"github.com/sethjback/gobl/modifications"
+	"github.com/sethjback/gobl/spec"
+	"github.com/sethjback/gobl/util/log"
 )
 
 // Restore defines the paramiters of the work to be done

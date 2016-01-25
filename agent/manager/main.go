@@ -8,10 +8,10 @@ import (
 	"runtime"
 	"sync"
 
-	"github.com/sethjback/gobble/keys"
-	"github.com/sethjback/gobble/spec"
-	"github.com/sethjback/gobble/util"
-	"github.com/sethjback/gobble/util/log"
+	"github.com/sethjback/gobl/keys"
+	"github.com/sethjback/gobl/spec"
+	"github.com/sethjback/gobl/util"
+	"github.com/sethjback/gobl/util/log"
 )
 
 // Error wraps additional data specific to the workers

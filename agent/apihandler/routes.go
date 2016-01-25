@@ -1,6 +1,6 @@
 package apihandler
 
-import "github.com/sethjback/gobble/httpapi"
+import "github.com/sethjback/gobl/httpapi"
 
 // Routes are teh agent's routes
 var Routes = httpapi.Routes{

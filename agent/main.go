@@ -8,12 +8,12 @@ import (
 	"os"
 
 	"github.com/BurntSushi/toml"
-	"github.com/sethjback/gobble/agent/apihandler"
-	"github.com/sethjback/gobble/agent/manager"
-	"github.com/sethjback/gobble/httpapi"
-	"github.com/sethjback/gobble/spec"
-	"github.com/sethjback/gobble/util/log"
-	"github.com/sethjback/gobble/version"
+	"github.com/sethjback/gobl/agent/apihandler"
+	"github.com/sethjback/gobl/agent/manager"
+	"github.com/sethjback/gobl/httpapi"
+	"github.com/sethjback/gobl/spec"
+	"github.com/sethjback/gobl/util/log"
+	"github.com/sethjback/gobl/version"
 )
 
 type config struct {
