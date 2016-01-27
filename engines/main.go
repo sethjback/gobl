@@ -5,7 +5,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/sethjback/gobble/files"
+	"github.com/sethjback/gobl/files"
 )
 
 // Writer provides a fan-out interface for engines

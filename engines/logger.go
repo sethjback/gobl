@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/sethjback/gobble/files"
+	"github.com/sethjback/gobl/files"
 )
 
 // Logger is an engine that takes incoming backup requests and simply logs them

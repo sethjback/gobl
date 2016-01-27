@@ -4,9 +4,9 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/sethjback/gobble/httpapi"
-	"github.com/sethjback/gobble/keys"
-	"github.com/sethjback/gobble/spec"
+	"github.com/sethjback/gobl/httpapi"
+	"github.com/sethjback/gobl/keys"
+	"github.com/sethjback/gobl/spec"
 )
 
 // Agents returns a list of all known agents

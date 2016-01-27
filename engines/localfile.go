@@ -8,7 +8,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/sethjback/gobble/files"
+	"github.com/sethjback/gobl/files"
 )
 
 // LocalFile backs up files to the local filesystem

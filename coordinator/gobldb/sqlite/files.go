@@ -5,8 +5,8 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/sethjback/gobble/files"
-	"github.com/sethjback/gobble/spec"
+	"github.com/sethjback/gobl/files"
+	"github.com/sethjback/gobl/spec"
 )
 
 // AddJobFile adds a file definition to given job id

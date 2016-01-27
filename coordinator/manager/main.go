@@ -6,10 +6,10 @@ import (
 	"strings"
 
 	"github.com/robfig/cron"
-	"github.com/sethjback/gobble/coordinator/gobldb"
-	"github.com/sethjback/gobble/coordinator/gobldb/sqlite"
-	"github.com/sethjback/gobble/keys"
-	"github.com/sethjback/gobble/util/log"
+	"github.com/sethjback/gobl/coordinator/gobldb"
+	"github.com/sethjback/gobl/coordinator/gobldb/sqlite"
+	"github.com/sethjback/gobl/keys"
+	"github.com/sethjback/gobl/util/log"
 )
 
 var gDb gobldb.Database

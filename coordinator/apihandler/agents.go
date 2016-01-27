@@ -9,9 +9,9 @@ import (
 	"strconv"
 
 	"github.com/gorilla/mux"
-	"github.com/sethjback/gobble/coordinator/manager"
-	"github.com/sethjback/gobble/httpapi"
-	"github.com/sethjback/gobble/spec"
+	"github.com/sethjback/gobl/coordinator/manager"
+	"github.com/sethjback/gobl/httpapi"
+	"github.com/sethjback/gobl/spec"
 )
 
 func agentList(w http.ResponseWriter, r *http.Request) (*httpapi.APIResponse, error) {

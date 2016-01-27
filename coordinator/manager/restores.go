@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/sethjback/gobble/engines"
-	"github.com/sethjback/gobble/httpapi"
-	"github.com/sethjback/gobble/spec"
+	"github.com/sethjback/gobl/engines"
+	"github.com/sethjback/gobl/httpapi"
+	"github.com/sethjback/gobl/spec"
 )
 
 func RunRestore(rr *spec.RestoreRequest) (int, error) {

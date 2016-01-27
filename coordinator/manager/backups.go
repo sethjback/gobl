@@ -3,10 +3,10 @@ package manager
 import (
 	"encoding/json"
 
-	"github.com/sethjback/gobble/engines"
-	"github.com/sethjback/gobble/httpapi"
-	"github.com/sethjback/gobble/modifications"
-	"github.com/sethjback/gobble/spec"
+	"github.com/sethjback/gobl/engines"
+	"github.com/sethjback/gobl/httpapi"
+	"github.com/sethjback/gobl/modifications"
+	"github.com/sethjback/gobl/spec"
 )
 
 // AddBackup adds a backupdefinition to the system

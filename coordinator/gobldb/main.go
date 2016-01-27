@@ -1,8 +1,8 @@
 package gobldb
 
 import (
-	"github.com/sethjback/gobble/files"
-	"github.com/sethjback/gobble/spec"
+	"github.com/sethjback/gobl/files"
+	"github.com/sethjback/gobl/spec"
 )
 
 // QueryDateFormat defines the format we want dates in for the joblist queries

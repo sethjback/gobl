@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/sethjback/gobble/spec"
+	"github.com/sethjback/gobl/spec"
 )
 
 // AddBackupDefinition inserts a backup definition into the database

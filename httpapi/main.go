@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
-	"github.com/sethjback/gobble/util/log"
+	"github.com/sethjback/gobl/util/log"
 )
 
 // Server is the main handler for the api

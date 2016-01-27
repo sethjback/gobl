@@ -2,8 +2,8 @@ package manager
 
 import (
 	"github.com/robfig/cron"
-	"github.com/sethjback/gobble/spec"
-	"github.com/sethjback/gobble/util/log"
+	"github.com/sethjback/gobl/spec"
+	"github.com/sethjback/gobl/util/log"
 )
 
 type ScheduledJob struct {

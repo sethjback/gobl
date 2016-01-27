@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 
-	"github.com/sethjback/gobble/spec"
+	"github.com/sethjback/gobl/spec"
 )
 
 // AddSchedule saves a schedule to the DB

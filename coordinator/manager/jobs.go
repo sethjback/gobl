@@ -6,7 +6,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sethjback/gobble/spec"
+	"github.com/sethjback/gobl/spec"
 )
 
 // JobStatus reads the status from the DB

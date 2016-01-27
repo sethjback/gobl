@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sethjback/gobble/engines"
-	"github.com/sethjback/gobble/files"
-	"github.com/sethjback/gobble/modifications"
+	"github.com/sethjback/gobl/engines"
+	"github.com/sethjback/gobl/files"
+	"github.com/sethjback/gobl/modifications"
 )
 
 const (

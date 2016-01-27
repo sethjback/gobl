@@ -9,11 +9,11 @@ import (
 
 	"github.com/BurntSushi/toml"
 	"github.com/fatih/structs"
-	"github.com/sethjback/gobble/coordinator/apihandler"
-	"github.com/sethjback/gobble/coordinator/manager"
-	"github.com/sethjback/gobble/httpapi"
-	"github.com/sethjback/gobble/util/log"
-	"github.com/sethjback/gobble/version"
+	"github.com/sethjback/gobl/coordinator/apihandler"
+	"github.com/sethjback/gobl/coordinator/manager"
+	"github.com/sethjback/gobl/httpapi"
+	"github.com/sethjback/gobl/util/log"
+	"github.com/sethjback/gobl/version"
 )
 
 type config struct {

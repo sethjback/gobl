@@ -7,9 +7,9 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/sethjback/gobble/coordinator/manager"
-	"github.com/sethjback/gobble/httpapi"
-	"github.com/sethjback/gobble/spec"
+	"github.com/sethjback/gobl/coordinator/manager"
+	"github.com/sethjback/gobl/httpapi"
+	"github.com/sethjback/gobl/spec"
 )
 
 func restore(w http.ResponseWriter, r *http.Request) (*httpapi.APIResponse, error) {

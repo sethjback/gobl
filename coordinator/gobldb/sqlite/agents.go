@@ -4,7 +4,7 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/sethjback/gobble/spec"
+	"github.com/sethjback/gobl/spec"
 )
 
 // AddAgent inserts an agent into the DB

@@ -7,8 +7,8 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/sethjback/gobble/coordinator/gobldb"
-	"github.com/sethjback/gobble/spec"
+	"github.com/sethjback/gobl/coordinator/gobldb"
+	"github.com/sethjback/gobl/spec"
 )
 
 // CreateBackupJob inserts a new backup job record into the DB and marks it Running
