@@ -12,6 +12,7 @@ import (
 
 	"github.com/sethjback/gobl/agent/notification"
 	"github.com/sethjback/gobl/agent/workers"
+	"github.com/sethjback/gobl/config"
 	"github.com/sethjback/gobl/engines"
 	"github.com/sethjback/gobl/modifications"
 	"github.com/sethjback/gobl/spec"
@@ -22,7 +23,7 @@ import (
 // implements the Job interface
 type BackupJob struct {
 	ID                int
-	Coordinator       *spec.Coordinator
+	Coordinator       *config.Coordinator
 	Start             string
 	State             string
 	Paramiters        spec.BackupParamiter

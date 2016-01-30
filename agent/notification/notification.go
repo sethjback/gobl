@@ -3,9 +3,9 @@ package notification
 import (
 	"time"
 
+	"github.com/sethjback/gobl/config"
 	"github.com/sethjback/gobl/httpapi"
 	"github.com/sethjback/gobl/keys"
-	"github.com/sethjback/gobl/spec"
 	"github.com/sethjback/gobl/util/log"
 	"github.com/sethjback/gobl/util/try"
 )
@@ -18,7 +18,7 @@ type Notification struct {
 
 // Queue handles queuing up messages to be sent to the coordinator
 type Queue struct {
-	Coordinator *spec.Coordinator
+	Coordinator *config.Coordinator
 	JobID       int
 	Pending     []*Notification
 	stop        chan struct{}
@@ -30,7 +30,7 @@ type Queue struct {
 }
 
 // NewQueue creats and initilizes a new notifiaction queue
-func NewQueue(c *spec.Coordinator, jobID int, km keys.Manager) *Queue {
+func NewQueue(c *config.Coordinator, jobID int, km keys.Manager) *Queue {
 	return &Queue{
 		Coordinator: c,
 		JobID:       jobID,

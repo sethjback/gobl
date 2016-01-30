@@ -3,7 +3,6 @@ package apihandler
 import (
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -37,6 +36,10 @@ func newRestoreJob(w http.ResponseWriter, r *http.Request) (*httpapi.APIResponse
 		return nil, httpapi.NewError(err.Error(), "Invalid Request", 400)
 	}
 
+	if err = manager.VerifySignature(body, r.Header.Get("x-gobl-signature")); err != nil {
+		return nil, httpapi.NewError(err.Error(), "Invalid Signature", 401)
+	}
+
 	err = manager.NewRestore(*restoreRequest)
 	if err != nil {
 		if e, ok := err.(*manager.Error); ok {
@@ -64,8 +67,7 @@ func newBackupJob(w http.ResponseWriter, r *http.Request) (*httpapi.APIResponse,
 		return nil, httpapi.NewError(err.Error(), "Invalid Request", 400)
 	}
 
-	if err = manager.VerifySignature(backupRequest.Coordinator, body, r.Header.Get("x-gobl-signature")); err != nil {
-		fmt.Println(err)
+	if err = manager.VerifySignature(body, r.Header.Get("x-gobl-signature")); err != nil {
 		return nil, httpapi.NewError(err.Error(), "Invalid Signature", 401)
 	}
 

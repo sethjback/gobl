@@ -9,6 +9,8 @@ import (
 	"os"
 	"strings"
 	"time"
+
+	"github.com/sethjback/gobl/config"
 )
 
 type level struct {
@@ -19,15 +21,8 @@ type level struct {
 	Debug int
 }
 
-// Config defines the logging paramiters
-type Config struct {
-	out       io.Writer
-	Level     int    `toml:"level"`
-	Verbosity int    `toml:"verbosity"`
-	Output    string `toml:"output"`
-}
-
-var conf *Config
+var conf *config.Log
+var out io.Writer
 
 // Level is the log level to use
 var Level = level{1, 2, 3, 4, 5}
@@ -36,9 +31,9 @@ var Level = level{1, 2, 3, 4, 5}
 // Output will ultimately determine where to log. For now, everything logs to Stdout
 // level determins the level of logging
 // verbosity determins how much information to put in the log (right now it just controls timestamp display)
-func Init(config Config) {
+func Init(config config.Log) {
 	conf = &config
-	conf.out = os.Stdout
+	out = os.Stdout
 }
 
 // Fatal will log one last mesasge, then exit with an error code
@@ -121,7 +116,7 @@ func log(source string, values ...interface{}) {
 
 	st += "gobl: (" + source + ") " + strings.Repeat("%v ", len(values)) + "\n"
 
-	fmt.Fprintf(conf.out, st, values...)
+	fmt.Fprintf(out, st, values...)
 }
 
 func logf(source string, format string, values ...interface{}) {
@@ -131,5 +126,5 @@ func logf(source string, format string, values ...interface{}) {
 	}
 
 	st += "gobl: (" + source + ") " + format + "\n"
-	fmt.Fprintf(conf.out, st, values...)
+	fmt.Fprintf(out, st, values...)
 }
