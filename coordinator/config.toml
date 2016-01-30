@@ -1,16 +1,29 @@
 # Exmpale Config
 
-# IP to listen on
-ip = "127.0.0.1"
-# Port
-port = "8030"
-# Path to the DB file (sqlite at the moment)
-dbpath = "./testdb"
-# Private Key used to sign requests.
-privateKey = "./private.pem"
+[host]
+address = "127.0.0.1:8030" # IP:PORT to listen on
+privateKey = "./private.pem" # Private Key used to sign requests
+
+[db]
+dbpath = "./testdb" # Path to the DB file (sqlite at the moment)
 
 # Logging Options
 [logging]
 level = 5 # from 1 (fatal only) to 5 (debug)
 verbosity = 0 # At the moment the only difference is that 1 prints a timestamp and 0 does not
 output = "stdout" # stdout is the only methode supported at the moment
+
+# Email Options
+# The only two protocols supported at this time: tls:// && tcp://
+# For unencrypted email use tcp:// as the protocol.
+# NOTE: if you are attempting to send over an unencrypted protocol (i.e. tcp), you CANNOT use smtp auth
+# because your username and password will be sent in plain text over the wire
+[email]
+# server = "tls://email-smtp.us-west-2.amazonaws.com:465" # must be in form protocol://address:port
+# server = "tcp://127.0.0.1:25" # must be in form protocol://address:port
+# to = "test@example.com"
+# from = "backup@gobl.io"
+# auth = true
+# user = "username"
+# password = "password"
+# subject = "Email from gobl backup"

@@ -5,6 +5,7 @@ import (
 	"runtime"
 	"time"
 
+	"github.com/sethjback/gobl/coordinator/manager"
 	"github.com/sethjback/gobl/httpapi"
 )
 
@@ -26,4 +27,12 @@ func coordinatorStatus(w http.ResponseWriter, r *http.Request) (*httpapi.APIResp
 	status["memory"] = memStat.Alloc
 
 	return &httpapi.APIResponse{Data: status, HTTPCode: 200}, nil
+}
+
+func testEmail(w http.ResponseWriter, r *http.Request) (*httpapi.APIResponse, error) {
+	err := manager.SendTestEmail()
+	if err != nil {
+		return nil, httpapi.NewError(err.Error(), "Unable to send test email", 400)
+	}
+	return &httpapi.APIResponse{HTTPCode: 200}, nil
 }

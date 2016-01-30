@@ -2,10 +2,12 @@ package manager
 
 import (
 	"errors"
+	"fmt"
 	"net/url"
 	"strconv"
 	"time"
 
+	"github.com/sethjback/gobl/email"
 	"github.com/sethjback/gobl/spec"
 )
 
@@ -80,6 +82,23 @@ func FinishJob(id int) error {
 	}
 
 	// Todo: index table for files lookup
+
+	if conf.Email.Configured() {
+		a, _ := gDb.GetAgent(job.AgentID)
+		var msg string
+		if job.Message != nil {
+			msg = *job.Message
+		} else {
+			msg = ""
+		}
+		body := "Job Complete: " + strconv.Itoa(job.ID) + "\n"
+		body += "Agent: " + a.Name + "\n"
+		body += "Start: " + job.Start.String() + "\nEnd: " + job.End.String() + "\nDuration: " + fmt.Sprintf("%v", job.End.Sub(*job.Start)) + "\n"
+		body += "Message: " + msg + "\n\n"
+		body += "Job Definition: " + fmt.Sprintf("%+v", job.Definition)
+
+		email.SendEmail(conf.Email, body, "Job Report: "+strconv.Itoa(job.ID))
+	}
 
 	return nil
 }

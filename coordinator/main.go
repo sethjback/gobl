@@ -1,28 +1,18 @@
 package main
 
 import (
-	"errors"
 	"flag"
 	"fmt"
-	"io/ioutil"
 	"os"
+	"strings"
 
-	"github.com/BurntSushi/toml"
-	"github.com/fatih/structs"
+	"github.com/sethjback/gobl/config"
 	"github.com/sethjback/gobl/coordinator/apihandler"
 	"github.com/sethjback/gobl/coordinator/manager"
 	"github.com/sethjback/gobl/httpapi"
 	"github.com/sethjback/gobl/util/log"
 	"github.com/sethjback/gobl/version"
 )
-
-type config struct {
-	IP             string     `toml:"ip"`
-	PORT           string     `toml:"port"`
-	DBPath         string     `toml:"dbpath"`
-	PrivateKeyPath string     `toml:"privatekey"`
-	LogConfig      log.Config `toml:"logging"`
-}
 
 func main() {
 
@@ -31,43 +21,29 @@ func main() {
 	flag.StringVar(&cPath, "config", "", "Path to the config file")
 	flag.Parse()
 
-	conf, err := parseConfig(cPath)
+	conf, err := config.ParseConfig(cPath)
 	if err != nil {
 		fmt.Println("Error parsing config file:", err)
 		os.Exit(1)
 	}
 
-	log.Init(conf.LogConfig)
+	log.Init(conf.Log)
 	log.Infof("main", "coordinator starting. Version: %s", version.Version.String())
 	log.Debug("main", "config:", *conf)
 
-	err = manager.Init(structs.Map(conf))
+	err = manager.Init(conf)
 	if err != nil {
-		log.Fatal("main", "Error initializing manager: %v", err)
+		log.Fatalf("main", "Error initializing manager: %v", err)
 	}
 
 	httpAPI := new(httpapi.Server)
 
+	address := strings.Split(conf.Host.Address, ":")
+	if len(address) != 2 {
+		log.Fatalf("main", "Invalid host address. Must be in form ip:port")
+	}
+
 	httpAPI.Configure(apihandler.Routes)
-	httpAPI.Start(conf.IP, conf.PORT)
+	httpAPI.Start(address[0], address[1])
 
-}
-
-func parseConfig(path string) (*config, error) {
-	if path == "" {
-		return nil, errors.New("Config path empty")
-	}
-
-	cFile, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, err
-	}
-
-	var conf config
-
-	if _, err := toml.Decode(string(cFile), &conf); err != nil {
-		return nil, err
-	}
-
-	return &conf, nil
 }

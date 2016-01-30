@@ -1,6 +1,7 @@
 package gobldb
 
 import (
+	"github.com/sethjback/gobl/config"
 	"github.com/sethjback/gobl/files"
 	"github.com/sethjback/gobl/spec"
 )
@@ -10,7 +11,7 @@ const QueryDateFormat = "2006-01-02 15:04"
 
 // Database is the interface that must be implemented by the DB driver
 type Database interface {
-	Init(map[string]interface{}) error
+	Init(config.DB) error
 	// AGENTS
 	AddAgent(*spec.Agent) error
 	AgentList() ([]*spec.Agent, error)

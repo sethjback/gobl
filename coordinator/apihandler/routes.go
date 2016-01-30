@@ -131,6 +131,11 @@ var Routes = httpapi.Routes{
 		"/schedules/{sID}",
 		updateSchedule},
 	httpapi.Route{
+		"email",
+		"POST",
+		"/email",
+		testEmail},
+	httpapi.Route{
 		"GC",
 		"POST",
 		"/gc",

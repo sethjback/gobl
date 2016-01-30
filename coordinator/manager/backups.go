@@ -57,7 +57,7 @@ func RunBackup(backupID int) (int, error) {
 		return -1, err
 	}
 
-	request := &spec.BackupJobRequest{Coordinator: &spec.Coordinator{Address: hostConfig["IP"].(string) + ":" + hostConfig["PORT"].(string)}}
+	request := &spec.BackupJobRequest{}
 	request.ID = jSpec.ID
 	request.Paramiters = b.Paramiters
 
