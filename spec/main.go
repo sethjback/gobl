@@ -28,16 +28,14 @@ type JobFile struct {
 
 // BackupJobRequest defines a request for a job sent to the AgentID
 type BackupJobRequest struct {
-	ID          int             `json:"id"`
-	Paramiters  BackupParamiter `json:"paramiters"`
-	Coordinator *Coordinator    `json:"coordinator"`
+	ID         int             `json:"id"`
+	Paramiters BackupParamiter `json:"paramiters"`
 }
 
 // RestoreJobRequest defines a request for a job sent to the AgentID
 type RestoreJobRequest struct {
-	ID          int              `json:"id"`
-	Paramiters  RestoreParamiter `json:"paramiters"`
-	Coordinator *Coordinator     `json:"coordinator"`
+	ID         int              `json:"id"`
+	Paramiters RestoreParamiter `json:"paramiters"`
 }
 
 // RestoreRequest defines the paramiters needed for starting a Restore job

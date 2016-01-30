@@ -10,6 +10,7 @@ import (
 
 	"github.com/sethjback/gobl/agent/notification"
 	"github.com/sethjback/gobl/agent/workers"
+	"github.com/sethjback/gobl/config"
 	"github.com/sethjback/gobl/engines"
 	"github.com/sethjback/gobl/files"
 	"github.com/sethjback/gobl/modifications"
@@ -21,7 +22,7 @@ import (
 // implements the Job interface
 type RestoreJob struct {
 	ID                int
-	coordinator       *spec.Coordinator
+	Coordinator       *config.Coordinator
 	Start             string
 	State             string
 	Paramiters        spec.RestoreParamiter
@@ -94,7 +95,7 @@ func (r *RestoreJob) Run(finished chan<- bool) {
 	r.State = "running"
 	r.cancel = make(chan struct{})
 	r.Start = time.Now().String()
-	r.NotificationQueue = notification.NewQueue(r.coordinator, r.ID, *keyManager)
+	r.NotificationQueue = notification.NewQueue(r.Coordinator, r.ID, *keyManager)
 
 	sigsc := make(chan files.Signature)
 	processed := make(chan int64)

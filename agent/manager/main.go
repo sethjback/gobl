@@ -8,6 +8,7 @@ import (
 	"runtime"
 	"sync"
 
+	"github.com/sethjback/gobl/config"
 	"github.com/sethjback/gobl/keys"
 	"github.com/sethjback/gobl/spec"
 	"github.com/sethjback/gobl/util"
@@ -34,28 +35,28 @@ type Job interface {
 var active = make(map[int]Job)
 var m sync.Mutex
 var keyManager *keys.Manager
-var coordinator *spec.Coordinator
+var conf *config.Config
 var version util.Version
 
 // Init configures the manager
-func Init(privateKey string, c spec.Coordinator) error {
+func Init(c *config.Config) error {
 
 	keyManager = &keys.Manager{PublicKeys: make(map[string]*rsa.PublicKey)}
-	key, err := keys.OpenPrivateKey(privateKey)
+	key, err := keys.OpenPrivateKey(c.Host.PrivateKeyPath)
 	if err != nil {
 		return err
 	}
 
 	keyManager.PrivateKey = key
 
-	cKey, err := keys.OpenPublicKey(c.PublicKey)
+	cKey, err := keys.OpenPublicKey(c.Coordinator.PublicKeyPath)
 	if err != nil {
 		return err
 	}
 
-	keyManager.PublicKeys[c.Address] = cKey
+	keyManager.PublicKeys[c.Coordinator.Address] = cKey
 
-	coordinator = &c
+	conf = c
 
 	return nil
 }
@@ -96,7 +97,7 @@ func NewRestore(restoreRequest spec.RestoreJobRequest) error {
 
 	restoreJob.ID = restoreRequest.ID
 	restoreJob.MaxWorkers = 3
-	restoreJob.coordinator = coordinator
+	restoreJob.Coordinator = &conf.Coordinator
 	restoreJob.Paramiters = restoreRequest.Paramiters
 
 	finishedChan := make(chan bool)
@@ -121,7 +122,7 @@ func NewBackup(backupRequest spec.BackupJobRequest) error {
 		return &Error{err.Error(), "Could Not Create Job", 400}
 	}
 
-	backupJob.Coordinator = coordinator
+	backupJob.Coordinator = &conf.Coordinator
 	backupJob.ID = backupRequest.ID
 	backupJob.MaxWorkers = 3
 
@@ -186,10 +187,11 @@ func GetKey() (string, error) {
 }
 
 // VerifySignature checks the incoming request agains
-func VerifySignature(c *spec.Coordinator, signed []byte, signature string) error {
-	key, err := keyManager.KeyForHost(c.Address)
+func VerifySignature(signed []byte, signature string) error {
+	log.Debugf("manager", "verify sig: %v", conf.Coordinator)
+	key, err := keyManager.KeyForHost(conf.Coordinator.Address)
 	if err != nil {
-		return err
+		return errors.New("Cannot find coordinator key")
 	}
 	return keys.VerifySignature(key, signed, signature)
 }
