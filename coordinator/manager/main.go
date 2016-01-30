@@ -6,21 +6,23 @@ import (
 	"strings"
 
 	"github.com/robfig/cron"
+	"github.com/sethjback/gobl/config"
 	"github.com/sethjback/gobl/coordinator/gobldb"
 	"github.com/sethjback/gobl/coordinator/gobldb/sqlite"
+	"github.com/sethjback/gobl/email"
 	"github.com/sethjback/gobl/keys"
 	"github.com/sethjback/gobl/util/log"
 )
 
 var gDb gobldb.Database
 var keyManager *keys.Manager
-var hostConfig map[string]interface{}
+var conf *config.Config
 var schedules *cron.Cron
 
 // Init sets up the environement to run
-func Init(config map[string]interface{}) error {
+func Init(c *config.Config) error {
 	gDb = &sqlite.SQLite{}
-	err := gDb.Init(config)
+	err := gDb.Init(c.DB)
 
 	//err = db.Init()
 	if err != nil {
@@ -28,7 +30,7 @@ func Init(config map[string]interface{}) error {
 	}
 
 	keyManager = &keys.Manager{PublicKeys: make(map[string]*rsa.PublicKey)}
-	key, err := keys.OpenPrivateKey(config["PrivateKeyPath"].(string))
+	key, err := keys.OpenPrivateKey(c.Host.PrivateKeyPath)
 	if err != nil {
 		return err
 	}
@@ -51,7 +53,7 @@ func Init(config map[string]interface{}) error {
 
 	}
 
-	hostConfig = config
+	conf = c
 
 	//init existing schedules
 	if err = initCron(); err != nil {
@@ -90,4 +92,15 @@ func VerifySignature(host string, signed []byte, signature string) error {
 	}
 
 	return keys.VerifySignature(key, signed, signature)
+}
+
+// SendTestEmail checks the email configuration by attempting to send out a test email
+func SendTestEmail() error {
+	err := email.SendEmail(conf.Email, "This is a test email from gobl. Let me be the first to congratulate you on receiving this message: it means your email is configured correctly. Way to go!", "Netfung Gobl Coordinator")
+	if err != nil {
+		log.Errorf("manager", "could not sent test email: %v", err.Error())
+		return err
+	}
+
+	return nil
 }

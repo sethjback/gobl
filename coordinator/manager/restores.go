@@ -56,9 +56,8 @@ func RunRestore(rr *spec.RestoreRequest) (int, error) {
 		BackupParamiters: backupJob.Definition.(spec.BackupParamiter)}
 
 	request := &spec.RestoreJobRequest{
-		ID:          job.ID,
-		Paramiters:  *rp,
-		Coordinator: &spec.Coordinator{Address: hostConfig["IP"].(string) + ":" + hostConfig["PORT"].(string)}}
+		ID:         job.ID,
+		Paramiters: *rp}
 
 	bString, err := json.Marshal(request)
 	if err != nil {

@@ -2,10 +2,11 @@ package sqlite
 
 import (
 	"database/sql"
-	"errors"
 
 	//use the sqlite3 interface for go
 	_ "github.com/mattn/go-sqlite3"
+	"github.com/sethjback/gobl/config"
+	"github.com/sethjback/gobl/util/log"
 )
 
 // SQLite DB Implementation
@@ -14,14 +15,13 @@ type SQLite struct {
 }
 
 // Init opens the DB and creates tables if necessary
-func (d *SQLite) Init(options map[string]interface{}) error {
-	//sql.Register(driverName, &sqlite3.SQLiteDriver{})
-	path, ok := options["DBPath"].(string)
-	if !ok {
-		return errors.New("Sqlite requires db path")
+func (d *SQLite) Init(options config.DB) error {
+
+	if len(options.DBPath) == 0 {
+		log.Warnf("sqlite", "DB Path empty, this will create in-memory db: probably not what you wanted!")
 	}
 
-	db, err := sql.Open("sqlite3", path)
+	db, err := sql.Open("sqlite3", options.DBPath)
 	if err != nil {
 		return err
 	}
