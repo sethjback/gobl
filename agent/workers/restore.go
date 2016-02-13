@@ -1,7 +1,6 @@
 package workers
 
 import (
-	"bufio"
 	"io"
 
 	"github.com/sethjback/gobl/engines"
@@ -51,7 +50,7 @@ func (r *Restore) Do(fileSig *files.Signature) *spec.JobFile {
 	go r.To.Restore(pipeR, *fileSig, errc)
 
 	//setup the decode pipeline
-	pipe := modifications.NewPipeline(bufio.NewReader(reader), errc, false, r.Modifications...)
+	pipe := modifications.NewPipeline(reader, errc, false, r.Modifications...)
 
 	//copy the data
 	go func() {
