@@ -221,8 +221,8 @@ func (e *LocalFile) Restore(reader io.Reader, fileSig files.Signature, errc chan
 		errc <- err
 		return
 	}
-
 	defer rFile.Close()
+
 	if _, err := io.Copy(rFile, reader); err != nil {
 		errc <- err
 		return

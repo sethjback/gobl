@@ -1,7 +1,6 @@
 package workers
 
 import (
-	"bufio"
 	"encoding/hex"
 	"io"
 	"os"
@@ -90,6 +89,7 @@ func (b *Backup) Do(file string) *spec.JobFile {
 		jf.State = spec.Errors
 		return jf
 	}
+	defer fileHandle.Close()
 
 	errc := make(chan error)
 	done := make(chan bool)
@@ -106,7 +106,7 @@ func (b *Backup) Do(file string) *spec.JobFile {
 	}
 
 	//setup the pipeline
-	pipe := modifications.NewPipeline(bufio.NewReader(fileHandle), errc, true, b.Modifications...)
+	pipe := modifications.NewPipeline(fileHandle, errc, true, b.Modifications...)
 
 	//copy the data
 	go func() {
