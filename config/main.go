@@ -9,28 +9,49 @@ import (
 
 // Config contains all the possible config options
 type Config struct {
-	Host        Host        `toml:"host"`
+	Server      Server      `toml:"server"`
 	DB          DB          `toml:"db"`
 	Log         Log         `toml:"logging"`
 	Email       Email       `toml:"email"`
 	Coordinator Coordinator `toml:"coordinator"`
 }
 
-// Host config
-type Host struct {
-	Address        string `toml:"address"`
-	PrivateKeyPath string `toml:"privatekey"`
+// Server config
+type Server struct {
+
+	// Listen defines what address:port to listen on
+	Listen string `toml:"listen"`
+
+	// Compress the server output
+	Compress bool `toml:"compress"`
+
+	// ShutdownWait is the number of seconds to wait for backup processes
+	// to finish before stopping the server
+	ShutdownWait int `toml:"shutdown_wait"`
 }
 
-// Coordinator config
+type Agent struct {
+	// PrivateKey is used to when communicating with the coordinator
+	PrivateKey string `toml:"private_key"`
+}
+
+// Coordinator config.
+// This is used to tell gobl agents about the coordinator so that they can
+// confirm its identity when it connects
 type Coordinator struct {
-	Address       string `toml:"address"`
-	PublicKeyPath string `toml:"publickey"`
+
+	// Address defines where the connections will be comming from
+	Address string `toml:"address"`
+
+	// PublicKey is the path to the coordinator's public key
+	PublicKey string `toml:"public_key"`
 }
 
 // DB Config
 type DB struct {
-	DBPath string `toml:"dbpath"`
+
+	// Path to the database file
+	Path string `toml:"path"`
 }
 
 // Log defines the logging paramiters
@@ -42,7 +63,7 @@ type Log struct {
 
 // Email config
 type Email struct {
-	ServerAddress  string `toml:"server"`
+	Server         string `toml:"server"`
 	From           string `toml:"from"`
 	To             string `toml:"to"`
 	Subject        string `toml:"subject"`
@@ -53,11 +74,11 @@ type Email struct {
 
 // Configured returns true if we have enough information to attempt to send emails
 func (e *Email) Configured() bool {
-	return len(e.ServerAddress) != 0 && len(e.From) != 0 && len(e.To) != 0
+	return len(e.Server) != 0 && len(e.From) != 0 && len(e.To) != 0
 }
 
 // ParseConfig parses a config file and returns a config object
-func ParseConfig(path string) (*Config, error) {
+func Parse(path string) (*Config, error) {
 	if path == "" {
 		return nil, errors.New("Config path empty")
 	}
