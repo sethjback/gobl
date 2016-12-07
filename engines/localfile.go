@@ -11,6 +11,8 @@ import (
 	"github.com/sethjback/gobl/files"
 )
 
+const NameLocalFile = "localfile"
+
 // LocalFile backs up files to the local filesystem
 type LocalFile struct {
 	savePath         string
@@ -90,7 +92,7 @@ func (e *LocalFile) ShouldBackup(fileSig files.Signature) (bool, error) {
 }
 
 // Backup saves the file to the local file system
-func (e *LocalFile) Backup(reader io.Reader, fileSig files.Signature, errc chan<- error) {
+func (e *LocalFile) Save(reader io.Reader, fileSig files.Signature, errc chan<- error) {
 	sig, err := json.Marshal(fileSig)
 	if err != nil {
 		errc <- err
@@ -102,7 +104,7 @@ func (e *LocalFile) Backup(reader io.Reader, fileSig files.Signature, errc chan<
 	fn := hex.EncodeToString(hash[:])
 
 	if !e.overWrite {
-		if _, err := os.Stat(e.savePath + string(os.PathSeparator) + fn); err == nil {
+		if _, err = os.Stat(e.savePath + string(os.PathSeparator) + fn); err == nil {
 			//err is nil, which means the file exists
 			errc <- errors.New("File (" + fileSig.Path + string(os.PathSeparator) + fileSig.Name + ") exists and overWrite is false")
 			return
@@ -190,6 +192,24 @@ func (e *LocalFile) ConfigureRestore(options map[string]interface{}) error {
 	}
 
 	return nil
+}
+
+func (e *LocalFile) ShouldRestore(fileSig files.Signature) (bool, error) {
+	var fPath string
+
+	if e.originalLocation {
+		fPath = fileSig.Path + string(os.PathSeparator) + fileSig.Name
+	} else {
+		fPath = e.restorePath + string(os.PathSeparator) + fileSig.Path + string(os.PathSeparator) + fileSig.Name
+	}
+
+	if _, err := os.Stat(fPath); err == nil {
+		return e.overWrite, nil
+	} else if os.IsNotExist(err) {
+		return true, nil
+	} else {
+		return false, err
+	}
 }
 
 // Restore takes the given input stream and restores the file to the local disk
