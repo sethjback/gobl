@@ -1,4 +1,4 @@
-package engines
+package engine
 
 import (
 	"errors"
@@ -9,26 +9,36 @@ import (
 )
 
 const (
-	OperationBackup  = 1
-	OperationRestore = 2
+	// ErrorInvalidOptionValue is used by engines to indicate a provided option value was invalid
+	ErrorInvalidOptionValue = "InvalidOptionValue"
+	// ErrorRequiredOptionMissing is used by engines to indicate a required option is absent
+	ErrorRequiredOptionMissing = "RequiredOptionMissing"
 )
 
 // Option contains individual options required to configure the engines
 type Option struct {
-	Name        string      `json:"name"`
-	Description string      `json:"description"`
-	Type        string      `json:"type"`
-	Required    bool        `json:"required"`
-	Default     interface{} `json:"default"`
+	// Name of the option
+	Name string `json:"name"`
+	// Description of what the option does
+	Description string `json:"description"`
+	// Type of value for this option
+	Type string `json:"type"`
+	// Required indicates if this option is non-optional
+	Required bool `json:"required"`
+	// Default value for this option
+	Default interface{} `json:"default"`
 }
 
 // Definition is used to identify the engine and store appropriate options
+// The definitions are used during jobs to store engine configuration details
 type Definition struct {
-	Name    string                 `json:"name"`
+	// Name of the engine
+	Name string `json:"name"`
+	// Options used to configure it
 	Options map[string]interface{} `json:"options"`
 }
 
-// Backup is the interface any backup engine needs to satisfy
+// Saver is the interface an engine needs to satisfy for saving (backing up) data
 type Saver interface {
 	// Save process the input bytes. Signauture gives information about the file being saved
 	// any errors encountered during the write should be sent over errc
@@ -36,16 +46,16 @@ type Saver interface {
 	// Retrieve the file represented by signature
 	Retrieve(signature files.Signature) (io.Reader, error)
 	// ShouldBackup indicates whether the engine needs to process the file
-	ShouldBackup(files.Signature) (bool, error)
+	ShouldSave(signature files.Signature) (bool, error)
 	// Name of the backup engine
 	Name() string
 	// BackupOptions available to configure the engine
-	BackupOptions() []Option
+	SaveOptions() []Option
 	// ConfigureBackup sets the appropriate options
-	ConfigureBackup(map[string]interface{}) error
+	ConfigureSave(options map[string]interface{}) error
 }
 
-// Restore is the interface any restore engine needs to satisfy
+// Restorer is the interface an engine needs to satisfy for restoring data
 type Restorer interface {
 	// Restore processes the input. Signature gives information aobut the file
 	// Any errors encountered when restoring the file should be sent over errc
@@ -68,7 +78,7 @@ func BuildSavers(definitions []Definition) ([]Saver, error) {
 		case NameLocalFile:
 			localFile := &LocalFile{}
 
-			if err := localFile.ConfigureBackup(d.Options); err != nil {
+			if err := localFile.ConfigureSave(d.Options); err != nil {
 				return nil, err
 			}
 
@@ -77,7 +87,7 @@ func BuildSavers(definitions []Definition) ([]Saver, error) {
 		case NameLogger:
 			logger := &Logger{}
 
-			if err := logger.ConfigureBackup(d.Options); err != nil {
+			if err := logger.ConfigureSave(d.Options); err != nil {
 				return nil, err
 			}
 
