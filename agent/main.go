@@ -21,7 +21,7 @@ func main() {
 	flag.StringVar(&cPath, "config", "", "Path to the config file")
 	flag.Parse()
 
-	conf, err := config.ParseConfig(cPath)
+	conf, err := config.Parse(cPath)
 	if err != nil {
 		fmt.Println(err)
 		os.Exit(1)
