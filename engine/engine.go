@@ -1,4 +1,4 @@
-package engines
+package engine
 
 import (
 	"io"
@@ -11,11 +11,13 @@ const (
 	ErrorFileCheck = "FileCheckFailed"
 )
 
+// Engine handles routing incoming data through to all the configured Savers and Restorers
+// It implements the io.Writer interface so it can be passed to things like io.Copy()
 type Engine interface {
 	// Implements io.Writer interface to save the data
 	io.Writer
 	// ErrorChan returns the channel that all writers will send errors over
-	ErrorChan() chan<- error
+	ErrorChan() <-chan error
 	// Finish must be called to close the writers
 	Finish()
 }
@@ -27,11 +29,12 @@ type backupEngine struct {
 	errc   chan error
 }
 
+// NewBackupEngine returns an engine configured
 func NewBackupEngine(signature files.Signature, savers ...Saver) (Engine, error) {
 	e := &backupEngine{savers: savers}
 	e.errc = make(chan error)
 	for i := 0; i < len(e.savers); i++ {
-		ok, err := e.savers[i].ShouldBackup(signature)
+		ok, err := e.savers[i].ShouldSave(signature)
 		if err != nil {
 			return nil, goblerr.New("Saver error on file check", ErrorFileCheck, nil, e.savers[i].Name()+" errored on ShouldBackup for "+signature.Name)
 		}
@@ -45,7 +48,7 @@ func NewBackupEngine(signature files.Signature, savers ...Saver) (Engine, error)
 	return e, nil
 }
 
-func (b *backupEngine) ErrorChan() chan<- error {
+func (b *backupEngine) ErrorChan() <-chan error {
 	return b.errc
 }
 
@@ -95,7 +98,7 @@ func NewRestoreEngine(signature files.Signature, to ...Restorer) (Engine, error)
 	return e, nil
 }
 
-func (r *restoreEngine) ErrorChan() chan<- error {
+func (r *restoreEngine) ErrorChan() <-chan error {
 	return r.errc
 }
 

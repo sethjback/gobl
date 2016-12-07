@@ -1,16 +1,22 @@
-package engines
+package engine
 
 import (
 	"encoding/json"
 	"errors"
 	"io"
 	"os"
+	"strings"
 	"time"
 
 	"github.com/sethjback/gobl/files"
+	"github.com/sethjback/gobl/goblerr"
 )
 
-const NameLogger = "logger"
+const (
+	NameLogger            = "logger"
+	LoggerOptionLogPath   = "logPath"
+	LoggerOptionOverwrite = "overwrite"
+)
 
 // Logger is an engine that takes incoming backup requests and simply logs them
 // to a file
@@ -36,44 +42,43 @@ func (e *Logger) Name() string {
 }
 
 // BackupOptions lists all the availalbe options
-func (e *Logger) BackupOptions() []Option {
+func (e *Logger) SaveOptions() []Option {
 	return []Option{
 		Option{
-			Name:     "logPath",
-			Type:     "string",
-			Required: true,
-			Default:  ""},
+			Name:        LoggerOptionLogPath,
+			Description: "full path to save the log",
+			Type:        "string",
+			Required:    true,
+			Default:     ""},
 		Option{
-			Name:     "overWrite",
-			Type:     "bool",
-			Required: false,
-			Default:  "false"}}
+			Name:        LoggerOptionOverwrite,
+			Description: "whether we should overwrite the log file if it exists or append",
+			Type:        "bool",
+			Required:    false,
+			Default:     "false"}}
 }
 
 // ConfigureBackup configures the engine so it is ready to use
-func (e *Logger) ConfigureBackup(options map[string]interface{}) error {
-	val, ok := options["logPath"]
-	if !ok {
-		return errors.New("logger: Invalid options: need logPath")
-	}
-
-	vstring, ok := val.(string)
-	if !ok {
-		return errors.New("logger: Invalid logPath: must be string")
-	}
-
-	e.logPath = vstring
-
-	val, ok = options["overWrite"]
-	if !ok {
-		e.overWrite = false
-	} else {
-		vbool, ok := val.(bool)
-		if !ok {
-			return errors.New("logger: Invalid overWrite: must be bool")
+func (e *Logger) ConfigureSave(options map[string]interface{}) error {
+	for k, v := range options {
+		switch strings.ToLower(k) {
+		case strings.ToLower(LoggerOptionLogPath):
+			vString, ok := v.(string)
+			if !ok {
+				return goblerr.New("Invalid option", ErrorInvalidOptionValue, nil, LoggerOptionLogPath+" must be a string")
+			}
+			e.logPath = vString
+		case strings.ToLower(LoggerOptionOverwrite):
+			vbool, ok := v.(bool)
+			if !ok {
+				return goblerr.New("Invalid option", ErrorInvalidOptionValue, nil, LoggerOptionOverwrite+" must be a bool")
+			}
+			e.overWrite = vbool
 		}
+	}
 
-		e.overWrite = vbool
+	if e.logPath == "" {
+		return goblerr.New("Must provide log path", ErrorRequiredOptionMissing, nil, LoggerOptionLogPath+" is required")
 	}
 
 	var lFlags int
@@ -90,11 +95,10 @@ func (e *Logger) ConfigureBackup(options map[string]interface{}) error {
 	lFile.Close()
 
 	return nil
-
 }
 
 // ShouldBackup always returns true: we want to log each file
-func (e *Logger) ShouldBackup(fileSig files.Signature) (bool, error) {
+func (e *Logger) ShouldSave(fileSig files.Signature) (bool, error) {
 	return true, nil
 }
 
