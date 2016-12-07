@@ -10,6 +10,8 @@ import (
 	"github.com/sethjback/gobl/files"
 )
 
+const NameLogger = "logger"
+
 // Logger is an engine that takes incoming backup requests and simply logs them
 // to a file
 type Logger struct {
@@ -97,7 +99,7 @@ func (e *Logger) ShouldBackup(fileSig files.Signature) (bool, error) {
 }
 
 // Backup collects information about the file then writes it to a log once the backup has finished
-func (e *Logger) Backup(reader io.Reader, fileSig files.Signature, errc chan<- error) {
+func (e *Logger) Save(reader io.Reader, fileSig files.Signature, errc chan<- error) {
 	fileData := new(logLine)
 	fileData.File = fileSig.Path + "/" + fileSig.Name
 	fileData.Modifications = fileSig.Modifications
