@@ -42,11 +42,11 @@ type Definition struct {
 type Saver interface {
 	// Save process the input bytes. Signauture gives information about the file being saved
 	// any errors encountered during the write should be sent over errc
-	Save(input io.Reader, signature files.Signature, errc chan<- error)
+	Save(input io.Reader, signature files.File, errc chan<- error)
 	// Retrieve the file represented by signature
-	Retrieve(signature files.Signature) (io.Reader, error)
+	Retrieve(signature files.File) (io.Reader, error)
 	// ShouldBackup indicates whether the engine needs to process the file
-	ShouldSave(signature files.Signature) (bool, error)
+	ShouldSave(signature files.File) (bool, error)
 	// Name of the backup engine
 	Name() string
 	// BackupOptions available to configure the engine
@@ -59,9 +59,9 @@ type Saver interface {
 type Restorer interface {
 	// Restore processes the input. Signature gives information aobut the file
 	// Any errors encountered when restoring the file should be sent over errc
-	Restore(input io.Reader, signature files.Signature, errc chan<- error)
+	Restore(input io.Reader, signature files.File, errc chan<- error)
 	// ShouldRestore indicates whether the engine needs to process the file
-	ShouldRestore(files.Signature) (bool, error)
+	ShouldRestore(files.File) (bool, error)
 	// Name of the restore engine
 	Name() string
 	// RestoreOptions available to configure the engine
@@ -111,6 +111,13 @@ func BuildRestorers(definitions []Definition) ([]Restorer, error) {
 				return nil, err
 			}
 			rers = append(rers, localFile)
+
+		case NameLogger:
+			logger := &Logger{}
+			if err := logger.ConfigureRestore(d.Options); err != nil {
+				return nil, err
+			}
+			rers = append(rers, logger)
 
 		default:
 			return nil, errors.New("I don't understand restore engine type: " + d.Name)

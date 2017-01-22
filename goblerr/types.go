@@ -8,11 +8,11 @@ import (
 type baseError struct {
 	Msg       string      `json:"message,omitempty"`
 	ErrorCode string      `json:"code,omitempty"`
-	Orig      error       `json:"origin,omitempty"`
+	Orig      string      `json:"origin,omitempty"`
 	Det       interface{} `json:"detail,omitempty"`
 }
 
-func newBaseError(message, code string, origin error, detail interface{}) *baseError {
+func newBaseError(message, code string, origin string, detail interface{}) *baseError {
 	return &baseError{message, code, origin, detail}
 }
 
@@ -23,8 +23,8 @@ func (b baseError) Error() string {
 		msg = fmt.Sprintf("%s (%s)", msg, b.Detail())
 	}
 
-	if b.Orig != nil {
-		msg = fmt.Sprintf("%s. caused by: %s", msg, b.Origin())
+	if b.Orig != "" {
+		msg = fmt.Sprintf("%s. caused by: %s", msg, b.Orig)
 	}
 
 	return msg
@@ -38,7 +38,7 @@ func (b baseError) Message() string {
 	return b.Msg
 }
 
-func (b baseError) Origin() error {
+func (b baseError) Origin() string {
 	return b.Orig
 }
 

@@ -24,8 +24,8 @@ func (t *TestEngine) GetSaved() []byte {
 	return s
 }
 
-func (t *TestEngine) Save(input io.Reader, signature files.Signature, errc chan<- error) {
-	if signature.Name == "failSave" {
+func (t *TestEngine) Save(input io.Reader, file files.File, errc chan<- error) {
+	if file.Path == "failSave" {
 		errc <- errors.New("Failed")
 		return
 	}
@@ -39,11 +39,11 @@ func (t *TestEngine) Save(input io.Reader, signature files.Signature, errc chan<
 		return
 	}
 }
-func (t *TestEngine) Retrieve(signature files.Signature) (io.Reader, error) {
+func (t *TestEngine) Retrieve(file files.File) (io.Reader, error) {
 	return nil, nil
 }
-func (t *TestEngine) ShouldSave(signature files.Signature) (bool, error) {
-	if signature.Name == "failShouldSave" {
+func (t *TestEngine) ShouldSave(file files.File) (bool, error) {
+	if file.Path == "failShouldSave" {
 		return false, errors.New("Fail")
 	}
 	return true, nil
@@ -58,8 +58,8 @@ func (t *TestEngine) ConfigureSave(map[string]interface{}) error {
 	return nil
 }
 
-func (t *TestEngine) Restore(input io.Reader, signature files.Signature, errc chan<- error) {
-	if signature.Name == "failRestore" {
+func (t *TestEngine) Restore(input io.Reader, file files.File, errc chan<- error) {
+	if file.Path == "failRestore" {
 		errc <- errors.New("Failed")
 		return
 	}
@@ -73,8 +73,8 @@ func (t *TestEngine) Restore(input io.Reader, signature files.Signature, errc ch
 		return
 	}
 }
-func (t *TestEngine) ShouldRestore(signature files.Signature) (bool, error) {
-	if signature.Name == "failShouldRestore" {
+func (t *TestEngine) ShouldRestore(file files.File) (bool, error) {
+	if file.Path == "failShouldRestore" {
 		return false, errors.New("Fail")
 	}
 	return true, nil
@@ -92,18 +92,20 @@ func TestBackupEngine(t *testing.T) {
 
 	t1 := &TestEngine{sMutex: &sync.Mutex{}}
 
-	sig := files.Signature{Name: "failShouldSave"}
+	file := files.File{Signature: files.Signature{Path: "failShouldSave"}}
 
-	egn, err := NewBackupEngine(sig, t1)
+	egn, ok, err := NewBackupEngine(file, t1)
 	assert.Nil(egn)
+	assert.False(ok)
 	assert.NotNil(err)
 
-	sig.Name = "failSave"
+	file.Path = "failSave"
 
 	toSave := []byte("This is the data that we want to save")
 	donec := make(chan bool)
 
-	egn, err = NewBackupEngine(sig, t1)
+	egn, ok, err = NewBackupEngine(file, t1)
+	assert.True(ok)
 	go func() {
 		_, cerr := io.Copy(egn, bytes.NewReader(toSave))
 		donec <- assert.Nil(cerr)
@@ -122,9 +124,10 @@ func TestBackupEngine(t *testing.T) {
 	t3 := &TestEngine{sMutex: &sync.Mutex{}}
 	t4 := &TestEngine{sMutex: &sync.Mutex{}}
 
-	sig.Name = "asdf"
+	file.Path = "asdf"
 
-	egn, err = NewBackupEngine(sig, t1, t2, t3, t4)
+	egn, ok, err = NewBackupEngine(file, t1, t2, t3, t4)
+	assert.True(ok)
 	go func() {
 		_, cerr := io.Copy(egn, bytes.NewReader(toSave))
 		donec <- assert.Nil(cerr)
@@ -153,18 +156,18 @@ func TestRestoreEngine(t *testing.T) {
 
 	t1 := &TestEngine{sMutex: &sync.Mutex{}}
 
-	sig := files.Signature{Name: "failShouldRestore"}
+	file := files.File{Signature: files.Signature{Path: "failShouldRestore"}}
 
-	egn, err := NewRestoreEngine(sig, t1)
+	egn, err := NewRestoreEngine(file, t1)
 	assert.Nil(egn)
 	assert.NotNil(err)
 
-	sig.Name = "failRestore"
+	file.Path = "failRestore"
 
 	toSave := []byte("This is the data that we want to restore")
 	donec := make(chan bool)
 
-	egn, err = NewRestoreEngine(sig, t1)
+	egn, err = NewRestoreEngine(file, t1)
 	go func() {
 		_, cerr := io.Copy(egn, bytes.NewReader(toSave))
 		donec <- assert.Nil(cerr)
@@ -183,9 +186,9 @@ func TestRestoreEngine(t *testing.T) {
 	t3 := &TestEngine{sMutex: &sync.Mutex{}}
 	t4 := &TestEngine{sMutex: &sync.Mutex{}}
 
-	sig.Name = "asdf"
+	file.Path = "asdf"
 
-	egn, err = NewRestoreEngine(sig, t1, t2, t3, t4)
+	egn, err = NewRestoreEngine(file, t1, t2, t3, t4)
 	go func() {
 		_, cerr := io.Copy(egn, bytes.NewReader(toSave))
 		donec <- assert.Nil(cerr)

@@ -49,11 +49,19 @@ type Request struct {
 	Path            string
 	Method          string
 	Query           url.Values
+	Client          *http.Client
 }
 
 // RequestFromContext returns the reqest that has been stored in a context
 func RequestFromContext(ctx context.Context) *Request {
 	return ctx.Value(request).(*Request)
+}
+
+func (r *Request) AddHeader(k, v string) {
+	if r.Headers == nil {
+		r.Headers = make(map[string]string)
+	}
+	r.Headers[k] = v
 }
 
 // String returns the request string that is appropriate for signing
@@ -128,29 +136,34 @@ func (r *Request) Send() (*Response, goblerr.Error) {
 	case "GET":
 		return get(r)
 	}
-	return nil, goblerr.New("Invalid method", ErrorRequestInvalid, nil, "must be POST or GET")
+	return nil, goblerr.New("Invalid method", ErrorRequestInvalid, "request", "must be POST or GET")
 }
 
 // Post a request
 func post(r *Request) (*Response, goblerr.Error) {
-	req, err := http.NewRequest("POST", "http://"+r.Host+r.Path, r.Body)
+	req, err := http.NewRequest("POST", r.Host+r.Path, r.Body)
 	if err != nil {
-		return nil, goblerr.New("Invalid request", ErrorRequestInvalid, err, nil)
+		return nil, goblerr.New("Invalid request", ErrorRequestInvalid, "request", err)
 	}
 
 	req.Header.Set(HeaderGoblSig, r.Headers[HeaderGoblSig])
 	req.Header.Set(HeaderGoblDate, strconv.Itoa(int(time.Now().UTC().Unix())))
 	req.Header.Set("Content-Type", "application/json")
 
-	c := &http.Client{CheckRedirect: checkRedirect}
-	resp, err := c.Do(req)
+	if r.Client == nil {
+		r.Client = &http.Client{CheckRedirect: checkRedirect}
+	} else {
+		r.Client.CheckRedirect = checkRedirect
+	}
+
+	resp, err := r.Client.Do(req)
 	if err != nil {
-		return nil, goblerr.New("Unable to send request", ErrorRequestFailed, err, nil)
+		return nil, goblerr.New("Unable to send request", ErrorRequestFailed, "request", err)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, goblerr.New("Unable to read response", ErrorRequestFailed, err, nil)
+		return nil, goblerr.New("Unable to read response", ErrorRequestFailed, "request", err)
 	}
 
 	resp.Body.Close()
@@ -158,7 +171,7 @@ func post(r *Request) (*Response, goblerr.Error) {
 	var response Response
 	err = json.Unmarshal(body, &response)
 	if err != nil {
-		return nil, goblerr.New("Unable to unmarshal", ErrorRequestFailed, err, nil)
+		return nil, goblerr.New("Unable to unmarshal", ErrorRequestFailed, "request", err)
 	}
 	response.HTTPCode = resp.StatusCode
 
@@ -167,23 +180,28 @@ func post(r *Request) (*Response, goblerr.Error) {
 
 // Get a request
 func get(r *Request) (*Response, goblerr.Error) {
-	req, err := http.NewRequest("GET", "http://"+r.Host+r.Path, nil)
+	req, err := http.NewRequest("GET", r.Host+r.Path, nil)
 	if err != nil {
-		return nil, goblerr.New("Invalid request", ErrorRequestInvalid, err, nil)
+		return nil, goblerr.New("Invalid request", ErrorRequestInvalid, "request", err)
 	}
 
 	req.Header.Set(HeaderGoblSig, r.Headers[HeaderGoblSig])
 	req.Header.Set(HeaderGoblDate, strconv.Itoa(int(time.Now().UTC().Unix())))
 
-	c := &http.Client{CheckRedirect: checkRedirect}
-	resp, err := c.Do(req)
+	if r.Client == nil {
+		r.Client = &http.Client{CheckRedirect: checkRedirect}
+	} else {
+		r.Client.CheckRedirect = checkRedirect
+	}
+
+	resp, err := r.Client.Do(req)
 	if err != nil {
-		return nil, goblerr.New("Unable to send request", ErrorRequestFailed, err, nil)
+		return nil, goblerr.New("Unable to send request", ErrorRequestFailed, "request", err)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, goblerr.New("Unable to read response", ErrorRequestFailed, err, nil)
+		return nil, goblerr.New("Unable to read response", ErrorRequestFailed, "request", err)
 	}
 
 	resp.Body.Close()
@@ -191,7 +209,7 @@ func get(r *Request) (*Response, goblerr.Error) {
 	var response Response
 	err = json.Unmarshal(body, &response)
 	if err != nil {
-		return nil, goblerr.New("Unable to unmarshal", ErrorRequestFailed, err, nil)
+		return nil, goblerr.New("Unable to unmarshal", ErrorRequestFailed, "request", err)
 	}
 	response.HTTPCode = resp.StatusCode
 

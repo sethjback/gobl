@@ -2,7 +2,7 @@ package spec
 
 // Coordinator defines a coordinator
 type Coordinator struct {
-	Address   string `json:"address"`
+	ID        string `json:"id"`
 	PublicKey string `json:"publickey"`
 }
 

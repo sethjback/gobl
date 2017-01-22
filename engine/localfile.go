@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"os"
 	"strings"
@@ -63,32 +64,32 @@ func (e *LocalFile) ConfigureSave(options map[string]interface{}) error {
 		case strings.ToLower(LocalFileOptionSavePath):
 			vString, ok := v.(string)
 			if !ok {
-				return goblerr.New("Invalid option", ErrorInvalidOptionValue, nil, LocalFileOptionSavePath+" must be a string")
+				return goblerr.New("Invalid option", ErrorInvalidOptionValue, "localfile", fmt.Sprintf("%s must be a string", LocalFileOptionSavePath))
 			}
 			if err := os.MkdirAll(vString, 0744); err != nil {
-				return goblerr.New("Configuration failed", errorAccessSavePath, err, "unable to create or access "+LocalFileOptionSavePath)
+				return goblerr.New("Configuration failed", errorAccessSavePath, "localfile", fmt.Sprintf("unable to create or access %s (%s)", LocalFileOptionSavePath, err))
 			}
 			e.savePath = vString
 
 		case strings.ToLower(LocalFileOptionOverwrite):
 			vBool, ok := v.(bool)
 			if !ok {
-				return goblerr.New("Invalid option", ErrorInvalidOptionValue, nil, LocalFileOptionOverwrite+" must be a bool")
+				return goblerr.New("Invalid option", ErrorInvalidOptionValue, "localfile", fmt.Sprintf("%s must be a bool", LocalFileOptionOverwrite))
 			}
 			e.overWrite = vBool
 		}
 	}
 
 	if e.savePath == "" {
-		return goblerr.New("Must provide save path", ErrorRequiredOptionMissing, nil, LocalFileOptionOverwrite+" is required")
+		return goblerr.New("Must provide save path", ErrorRequiredOptionMissing, "localfile", fmt.Sprintf("%s is required", LocalFileOptionSavePath))
 	}
 
 	return nil
 }
 
 // ShouldBackup determines if we have already saved this signature and thus wether we should save again
-func (e *LocalFile) ShouldSave(fileSig files.Signature) (bool, error) {
-	fn, err := hashFileSig(fileSig)
+func (e *LocalFile) ShouldSave(file files.File) (bool, error) {
+	fn, err := hashFileSig(file.Signature)
 	if err != nil {
 		return false, err
 	}
@@ -101,8 +102,8 @@ func (e *LocalFile) ShouldSave(fileSig files.Signature) (bool, error) {
 }
 
 // Backup saves the file to the local file system
-func (e *LocalFile) Save(reader io.Reader, fileSig files.Signature, errc chan<- error) {
-	fn, err := hashFileSig(fileSig)
+func (e *LocalFile) Save(reader io.Reader, file files.File, errc chan<- error) {
+	fn, err := hashFileSig(file.Signature)
 	if err != nil {
 		errc <- err
 		return
@@ -111,36 +112,36 @@ func (e *LocalFile) Save(reader io.Reader, fileSig files.Signature, errc chan<- 
 	if !e.overWrite {
 		if _, err = os.Stat(e.savePath + string(os.PathSeparator) + fn); err == nil {
 			//err is nil, which means the file exists
-			errc <- errors.New("File (" + fileSig.Path + string(os.PathSeparator) + fileSig.Name + ") exists and overWrite is false")
+			errc <- errors.New("File (" + file.Path + ") exists and overWrite is false")
 			return
 		}
 	}
 
-	file, err := os.Create(e.savePath + string(os.PathSeparator) + fn)
+	saveFile, err := os.Create(e.savePath + string(os.PathSeparator) + fn)
 	if err != nil {
 		errc <- err
 		return
 	}
 
-	if _, err := io.Copy(file, reader); err != nil {
+	if _, err := io.Copy(saveFile, reader); err != nil {
 		errc <- err
 		return
 	}
 }
 
 // Retrieve grabs the file from the save location and reaturns a reader to it
-func (e *LocalFile) Retrieve(fileSig files.Signature) (io.Reader, error) {
-	fn, err := hashFileSig(fileSig)
+func (e *LocalFile) Retrieve(file files.File) (io.Reader, error) {
+	fn, err := hashFileSig(file.Signature)
 	if err != nil {
 		return nil, err
 	}
 
-	file, err := os.OpenFile(e.savePath+string(os.PathSeparator)+fn, os.O_RDONLY, 0600)
+	restoreFile, err := os.OpenFile(e.savePath+string(os.PathSeparator)+fn, os.O_RDONLY, 0600)
 	if err != nil {
 		return nil, err
 	}
 
-	return file, nil
+	return restoreFile, nil
 }
 
 func hashFileSig(fileSig files.Signature) (string, error) {
@@ -178,17 +179,17 @@ func (e *LocalFile) ConfigureRestore(options map[string]interface{}) error {
 		switch strings.ToLower(k) {
 		case strings.ToLower(LocalFileOptionOverwrite):
 			if vBool, ok := v.(bool); !ok {
-				return goblerr.New("Invalid option", ErrorInvalidOptionValue, nil, LocalFileOptionOverwrite+" must be a bool")
+				return goblerr.New("Invalid option", ErrorInvalidOptionValue, "localfile", LocalFileOptionOverwrite+" must be a bool")
 			} else {
 				e.overWrite = vBool
 				oProvided = true
 			}
 		case strings.ToLower(LocalFileOptionRestorePath):
 			if vString, ok := v.(string); !ok {
-				return goblerr.New("Invalid option", ErrorInvalidOptionValue, nil, LocalFileOptionRestorePath+" must be a string")
+				return goblerr.New("Invalid option", ErrorInvalidOptionValue, "localfile", LocalFileOptionRestorePath+" must be a string")
 			} else {
 				if err := os.MkdirAll(vString, 0744); err != nil {
-					return goblerr.New("Configuration failed", errorAccessRestorePath, err, "unable to create or access "+LocalFileOptionRestorePath)
+					return goblerr.New("Configuration failed", errorAccessRestorePath, "localfile", fmt.Sprintf("unable to create or access %s (%s)", LocalFileOptionRestorePath, err))
 				}
 				e.restorePath = vString
 				rpProvided = true
@@ -197,20 +198,20 @@ func (e *LocalFile) ConfigureRestore(options map[string]interface{}) error {
 	}
 
 	if !rpProvided || !oProvided {
-		return goblerr.New("Must provide overwrite and restore path", ErrorRequiredOptionMissing, nil, nil)
+		return goblerr.New("Required options missing", ErrorRequiredOptionMissing, "error", fmt.Sprintf("%s and %s are required", LocalFileOptionRestorePath, LocalFileOptionOverwrite))
 	}
 
 	return nil
 }
 
 // ShouldRestore checks to see if the we should restore the file
-func (e *LocalFile) ShouldRestore(fileSig files.Signature) (bool, error) {
+func (e *LocalFile) ShouldRestore(file files.File) (bool, error) {
 	var fPath string
 
 	if e.originalLocation {
-		fPath = fileSig.Path + string(os.PathSeparator) + fileSig.Name
+		fPath = file.Path
 	} else {
-		fPath = e.restorePath + string(os.PathSeparator) + fileSig.Path + string(os.PathSeparator) + fileSig.Name
+		fPath = e.restorePath + string(os.PathSeparator) + file.Path
 	}
 
 	if _, err := os.Stat(fPath); err == nil {
@@ -223,7 +224,7 @@ func (e *LocalFile) ShouldRestore(fileSig files.Signature) (bool, error) {
 }
 
 // Restore takes the given input stream and restores the file to the local disk
-func (e *LocalFile) Restore(reader io.Reader, fileSig files.Signature, errc chan<- error) {
+func (e *LocalFile) Restore(reader io.Reader, file files.File, errc chan<- error) {
 	var fPath string
 	var fFlags int
 
@@ -234,16 +235,16 @@ func (e *LocalFile) Restore(reader io.Reader, fileSig files.Signature, errc chan
 	}
 
 	if e.originalLocation {
-		fPath = fileSig.Path + string(os.PathSeparator) + fileSig.Name
+		fPath = file.Path
 	} else {
 
-		err := os.MkdirAll(e.restorePath+string(os.PathSeparator)+fileSig.Path, 0744)
+		err := os.MkdirAll(e.restorePath+string(os.PathSeparator)+file.Path, 0744)
 		if err != nil {
 			errc <- err
 			return
 		}
 
-		fPath = e.restorePath + string(os.PathSeparator) + fileSig.Path + string(os.PathSeparator) + fileSig.Name
+		fPath = e.restorePath + string(os.PathSeparator) + file.Path
 	}
 
 	rFile, err := os.OpenFile(fPath, fFlags, 0744)

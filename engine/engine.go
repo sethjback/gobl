@@ -30,22 +30,22 @@ type backupEngine struct {
 }
 
 // NewBackupEngine returns an engine configured
-func NewBackupEngine(signature files.Signature, savers ...Saver) (Engine, error) {
+func NewBackupEngine(file files.File, savers ...Saver) (Engine, bool, error) {
 	e := &backupEngine{savers: savers}
 	e.errc = make(chan error)
 	for i := 0; i < len(e.savers); i++ {
-		ok, err := e.savers[i].ShouldSave(signature)
+		ok, err := e.savers[i].ShouldSave(file)
 		if err != nil {
-			return nil, goblerr.New("Saver error on file check", ErrorFileCheck, nil, e.savers[i].Name()+" errored on ShouldBackup for "+signature.Name)
+			return nil, false, goblerr.New("Saver error on file check", ErrorFileCheck, "engines", e.savers[i].Name()+" errored on ShouldBackup for "+file.Path)
 		}
 		if ok {
 			r, w := io.Pipe()
-			go e.savers[i].Save(r, signature, e.errc)
+			go e.savers[i].Save(r, file, e.errc)
 			e.pipes = append(e.pipes, w)
 		}
 	}
 
-	return e, nil
+	return e, len(e.pipes) > 0, nil
 }
 
 func (b *backupEngine) ErrorChan() <-chan error {
@@ -81,17 +81,17 @@ type restoreEngine struct {
 	errc  chan error
 }
 
-func NewRestoreEngine(signature files.Signature, to ...Restorer) (Engine, error) {
+func NewRestoreEngine(file files.File, to ...Restorer) (Engine, error) {
 	e := &restoreEngine{to: to}
 	e.errc = make(chan error)
 	for i := 0; i < len(e.to); i++ {
-		ok, err := e.to[i].ShouldRestore(signature)
+		ok, err := e.to[i].ShouldRestore(file)
 		if err != nil {
-			return nil, goblerr.New("Restorer error on file check", ErrorFileCheck, nil, e.to[i].Name()+" errored on ShouldRestore for "+signature.Name)
+			return nil, goblerr.New("Restorer error on file check", ErrorFileCheck, "engines", e.to[i].Name()+" errored on ShouldRestore for "+file.Path)
 		}
 		if ok {
 			r, w := io.Pipe()
-			go e.to[i].Restore(r, signature, e.errc)
+			go e.to[i].Restore(r, file, e.errc)
 			e.pipes = append(e.pipes, w)
 		}
 	}

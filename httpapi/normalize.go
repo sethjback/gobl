@@ -55,7 +55,7 @@ func (n Normalize) ServeHTTP(rw http.ResponseWriter, r *http.Request, next http.
 			resp := Response{
 				Message:  "Invalid request",
 				HTTPCode: 400,
-				Error:    goblerr.New("Body invalid", ErrorRequestBodyInvalid, err, nil),
+				Error:    goblerr.New("Body invalid", ErrorRequestBodyInvalid, "normalize", err),
 			}
 			resp.Write(rw)
 			return
@@ -65,7 +65,7 @@ func (n Normalize) ServeHTTP(rw http.ResponseWriter, r *http.Request, next http.
 			resp := Response{
 				Message:  "Invalid request",
 				HTTPCode: 400,
-				Error:    goblerr.New("Error reading body", ErrorRequestBodyInvalid, err, nil),
+				Error:    goblerr.New("Error reading body", ErrorRequestBodyInvalid, "normalize", err),
 			}
 			resp.Write(rw)
 			return
@@ -87,21 +87,21 @@ func (n Normalize) ServeHTTP(rw http.ResponseWriter, r *http.Request, next http.
 
 func validateTimestamp(timestamp string) (int, goblerr.Error) {
 	if timestamp == "" {
-		return -1, goblerr.New("Date header not set", ErrorDateRequired, nil, "you must provide the x-gobl-date header in every request")
+		return -1, goblerr.New("Date header not set", ErrorDateRequired, "normalize", "you must provide the x-gobl-date header in every request")
 	}
 
 	tint, err := strconv.Atoi(timestamp)
 	if err != nil {
-		return -1, goblerr.New("Date header invalid", ErrorDateInvalid, nil, "header not a valid unix timestamp")
+		return -1, goblerr.New("Date header invalid", ErrorDateInvalid, "normalize", "header not a valid unix timestamp")
 	}
 
 	cTime := int(time.Now().UTC().Unix())
 	if tint > cTime {
-		return -1, goblerr.New("Date header invalid", ErrorDateInvalid, nil, "timestamp cannot be in the future")
+		return -1, goblerr.New("Date header invalid", ErrorDateInvalid, "normalize", "timestamp cannot be in the future")
 	}
 
 	if tint < cTime-500 {
-		return -1, goblerr.New("Date header invalid", ErrorDateInvalid, nil, "timestamp must be within 5 min of now")
+		return -1, goblerr.New("Date header invalid", ErrorDateInvalid, "normalize", "timestamp must be within 5 min of now")
 	}
 
 	return tint, nil

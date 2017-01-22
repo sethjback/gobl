@@ -52,9 +52,9 @@ type Modifyer interface {
 
 // Pipeline is used to chain individual modifications together
 type Pipe struct {
-	// the head of the pipe, e.g. the file stream of the file to be modified
+	// Head of the pipe, e.g. the file stream of the file to be modified
 	Head io.Reader
-	// the ouptut after all modifyers have been applied
+	// Tail output after all modifyers have been applied
 	Tail io.Reader
 	// Errorc is a channel over which modifyers will send any errors encountered
 	Erroc chan error
@@ -72,7 +72,7 @@ func Pipeline(head io.Reader, mods ...Modifyer) *Pipe {
 }
 
 // Build takes defitions and configures the modifyers
-// Build always reqiures the definitins to be passed in the same order:
+// Build always reqiures the definitions to be passed in the same order:
 // if the direction is forward, the modifications will be returned in this order
 // if direction is backward, the modifications will be reversed
 // If a modifyer is not recognized, an error will be returned
@@ -92,7 +92,7 @@ func Build(m []Definition, direction int) ([]Modifyer, error) {
 			mods = append(mods, compress)
 
 		default:
-			return nil, goblerr.New("Invalid modifyer", ErrorUnrecognizedModifyer, nil, "I don't understand modifyer type: "+modType.Name)
+			return nil, goblerr.New("Invalid modifyer", ErrorUnrecognizedModifyer, "modifications", "I don't understand modifyer type: "+modType.Name)
 		}
 
 	}

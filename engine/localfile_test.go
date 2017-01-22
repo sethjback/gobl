@@ -26,12 +26,12 @@ func TestLocalFile(t *testing.T) {
 	err = l.ConfigureSave(map[string]interface{}{"savePath": "./", "overwrite": false})
 	assert.Nil(err)
 
-	fileSig := files.Signature{Name: "test1", Path: "/the/test/path"}
+	file := files.File{Signature: files.Signature{Path: "/the/test/path/test1"}}
 
-	fHash, err := hashFileSig(fileSig)
+	fHash, err := hashFileSig(file.Signature)
 	assert.Nil(err)
 
-	save, err := l.ShouldSave(fileSig)
+	save, err := l.ShouldSave(file)
 	assert.True(save)
 	assert.Nil(err)
 
@@ -39,7 +39,7 @@ func TestLocalFile(t *testing.T) {
 	// buffered so the save routine doesn't block if there is an error
 	errc := make(chan error, 3)
 
-	l.Save(bytes.NewReader(dataToSave), fileSig, errc)
+	l.Save(bytes.NewReader(dataToSave), file, errc)
 
 	select {
 	case e := <-errc:
@@ -52,20 +52,20 @@ func TestLocalFile(t *testing.T) {
 	assert.Nil(err)
 	assert.Equal(dataToSave, fData)
 
-	save, err = l.ShouldSave(fileSig)
+	save, err = l.ShouldSave(file)
 	assert.False(save)
 	assert.Nil(err)
 
-	fileSig.Modifications = append(fileSig.Modifications, "test1")
+	file.Modifications = append(file.Modifications, "test1")
 
-	fHash2, err := hashFileSig(fileSig)
+	fHash2, err := hashFileSig(file.Signature)
 	assert.Nil(err)
 
-	save, err = l.ShouldSave(fileSig)
+	save, err = l.ShouldSave(file)
 	assert.True(save)
 	assert.Nil(err)
 
-	l.Save(bytes.NewReader(dataToSave), fileSig, errc)
+	l.Save(bytes.NewReader(dataToSave), file, errc)
 
 	select {
 	case e := <-errc:

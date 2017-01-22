@@ -35,12 +35,12 @@ func encode(method string, level int, input io.Reader, errc chan<- error) io.Rea
 			return
 		}
 
-		defer cw.Close()
-
 		if _, err := io.Copy(cw, input); err != nil {
 			errc <- err
 			return
 		}
+		cw.Flush()
+		cw.Close()
 	}()
 
 	return r
@@ -60,15 +60,15 @@ func getDecoder(method string, stream io.Reader) (io.Reader, error) {
 	case "gzip":
 		return gzip.NewReader(stream)
 	}
-	return nil, goblerr.New("unrecognized decoder", ErrorInvalidOptionValue, nil, nil)
+	return nil, goblerr.New("unrecognized decoder", ErrorInvalidOptionValue, "compress", nil)
 }
 
-func getEncoder(method string, level int, stream io.Writer) (io.WriteCloser, error) {
+func getEncoder(method string, level int, stream io.Writer) (*gzip.Writer, error) {
 	switch method {
 	case "gzip":
 		return gzip.NewWriterLevel(stream, level)
 	}
-	return nil, goblerr.New("unrecognized encoder", ErrorInvalidOptionValue, nil, nil)
+	return nil, goblerr.New("unrecognized encoder", ErrorInvalidOptionValue, "compress", nil)
 }
 
 // Name returns the modifications's name
@@ -108,21 +108,21 @@ func (c *Compress) Configure(options map[string]interface{}) error {
 		case "method":
 			valS, ok := v.(string)
 			if !ok {
-				return goblerr.New("method must be string", ErrorInvalidOptionValue, nil, "acceptible options are: gzip")
+				return goblerr.New("method must be string", ErrorInvalidOptionValue, "compress", "acceptible options are: gzip")
 			}
 
 			if valS != "gzip" {
-				return goblerr.New("method not supported", ErrorInvalidOptionValue, nil, "acceptible options are: gzip")
+				return goblerr.New("method not supported", ErrorInvalidOptionValue, "compress", "acceptible options are: gzip")
 			}
 
 			c.method = valS
 		case "level":
 			valI, ok := v.(int)
 			if !ok {
-				return goblerr.New("level must be int", ErrorInvalidOptionValue, nil, "level must be between 1 and 9")
+				return goblerr.New("level must be int", ErrorInvalidOptionValue, "compress", "level must be between 1 and 9")
 			}
 			if valI < 1 || valI > 9 {
-				return goblerr.New("level invalid", ErrorInvalidOptionValue, nil, "level must be between 1 and 9")
+				return goblerr.New("level invalid", ErrorInvalidOptionValue, "compress", "level must be between 1 and 9")
 			}
 			c.level = valI
 		}

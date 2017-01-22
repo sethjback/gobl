@@ -124,6 +124,7 @@ func NewBackup(backupRequest spec.BackupJobRequest) error {
 
 	backupJob.Coordinator = &conf.Coordinator
 	backupJob.ID = backupRequest.ID
+	// TODO: make configurable
 	backupJob.MaxWorkers = 3
 
 	finishedChan := make(chan bool)
