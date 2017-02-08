@@ -17,9 +17,9 @@ const (
 
 // Jobber
 type Jobber interface {
-	Run(done chan<- struct{})
+	Run(done chan<- string)
 	Cancel()
-	Status() map[string]interface{}
+	Status() model.JobMeta
 }
 
 type JobNotification struct {

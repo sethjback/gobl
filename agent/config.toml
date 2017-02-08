@@ -1,13 +1,15 @@
 # Example Config
 
-[host]
-address = "127.0.0.1:8010" # IP:PORT you want the agent's REST api to listen on
-privatekey = "./private.pem" # Path to a private key the Agent will use to authenticate and sign requests
+[Server]
+listen = "127.0.0.1:8010" # IP:PORT you want the agent's REST api to listen on
+compress = true
+shutdown_wait = 20
+private_key = "./private.pem" # Path to a private key the Agent will use to authenticate and sign requests
 
 # The coordinator in charge of managing this agent
 [coordinator]
-address = "127.0.0.1:8030" # address to expect connections from
-publicKey = "./publicKey.pem" # used to verify the request signature
+public_key = "./public.pem" # used to verify the request signature
+address = "127.0.0.1:8020"
 
 #Logging options:
 [logging]

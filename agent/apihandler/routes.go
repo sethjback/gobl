@@ -2,45 +2,44 @@ package apihandler
 
 import "github.com/sethjback/gobl/httpapi"
 
-// Routes are teh agent's routes
-var Routes = httpapi.Routes{
+var Routes = []httpapi.Route{
+
+	// Agent
 	httpapi.Route{
-		"Status",
-		"GET",
-		"/status",
-		agentStatus},
+		Method:  "GET",
+		Path:    "/status",
+		Handler: agentStatus,
+	},
 	httpapi.Route{
-		"Backup",
-		"POST",
-		"/backups",
-		newBackupJob},
+		Method:  "GET",
+		Path:    "/key",
+		Handler: agentKey,
+	},
+
+	// Jobs
 	httpapi.Route{
-		"Restore",
-		"POST",
-		"/restores",
-		newRestoreJob},
+		Method:  "POST",
+		Path:    "/backups",
+		Handler: newBackupJob,
+	},
 	httpapi.Route{
-		"JobList",
-		"GET",
-		"/jobs",
-		jobList},
+		Method:  "POST",
+		Path:    "/restores",
+		Handler: newRestoreJob,
+	},
 	httpapi.Route{
-		"JobStatus",
-		"GET",
-		"/jobs/{jobId}",
-		jobStatus},
+		Method:  "GET",
+		Path:    "/jobs",
+		Handler: jobList,
+	},
 	httpapi.Route{
-		"JobCancel",
-		"DELETE",
-		"/jobs/{jobId}",
-		cancelJob},
+		Method:  "GET",
+		Path:    "/jobs/:id",
+		Handler: jobStatus,
+	},
 	httpapi.Route{
-		"AgentKey",
-		"GET",
-		"/key",
-		agentKey},
-	httpapi.Route{
-		"GC",
-		"POST",
-		"/gc",
-		gc}}
+		Method:  "DELETE",
+		Path:    "/jobs/:id",
+		Handler: cancelJob,
+	},
+}

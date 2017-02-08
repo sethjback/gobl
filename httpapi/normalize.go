@@ -34,7 +34,6 @@ func (n Normalize) ServeHTTP(rw http.ResponseWriter, r *http.Request, next http.
 	_, err := validateTimestamp(r.Header.Get(HeaderGoblDate))
 	if err != nil {
 		resp := Response{
-			Message:  "Invalid request",
 			HTTPCode: 400,
 			Error:    err,
 		}
@@ -45,16 +44,16 @@ func (n Normalize) ServeHTTP(rw http.ResponseWriter, r *http.Request, next http.
 
 	req := &Request{}
 
-	req.Headers["authorization"] = r.Header.Get("Authorization")
-	req.Headers[HeaderGoblSig] = r.Header.Get(HeaderGoblSig)
+	req.AddHeader("authorization", r.Header.Get("Authorization"))
+	req.AddHeader(HeaderGoblSig, r.Header.Get(HeaderGoblSig))
 
 	if r.Body != nil {
 		body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
 
 		if err != nil {
 			resp := Response{
-				Message:  "Invalid request",
-				HTTPCode: 400,
+
+				HTTPCode: 413,
 				Error:    goblerr.New("Body invalid", ErrorRequestBodyInvalid, "normalize", err),
 			}
 			resp.Write(rw)
@@ -63,7 +62,6 @@ func (n Normalize) ServeHTTP(rw http.ResponseWriter, r *http.Request, next http.
 
 		if err := r.Body.Close(); err != nil {
 			resp := Response{
-				Message:  "Invalid request",
 				HTTPCode: 400,
 				Error:    goblerr.New("Error reading body", ErrorRequestBodyInvalid, "normalize", err),
 			}
@@ -96,7 +94,7 @@ func validateTimestamp(timestamp string) (int, goblerr.Error) {
 	}
 
 	cTime := int(time.Now().UTC().Unix())
-	if tint > cTime {
+	if tint > cTime+5 {
 		return -1, goblerr.New("Date header invalid", ErrorDateInvalid, "normalize", "timestamp cannot be in the future")
 	}
 

@@ -9,15 +9,11 @@ import (
 
 // Response is the standardized response format sent from the API
 type Response struct {
-	// Message contains a generic message if the request is successful
-	// and a user friendly error message if there was an error
-	Message string `json:"message"`
-
 	// Data is API payload
 	Data map[string]interface{} `json:"data"`
 
 	// Error holds any errors that were encountered processing the request
-	Error goblerr.Error `json:"errors"`
+	Error goblerr.Error `json:"error,omitempty"`
 
 	// HTTPCode allows individual handlers to indiciate the appropriate http status code to return
 	HTTPCode int `json:"-"`
@@ -27,7 +23,13 @@ type Response struct {
 func (r *Response) Write(rw http.ResponseWriter) {
 	setHeaders(rw)
 
-	j, jErr := json.Marshal(r)
+	var j []byte
+	var jErr error
+	if r.Error != nil {
+		j, jErr = json.Marshal(r.Error)
+	} else {
+		j, jErr = json.Marshal(r.Data)
+	}
 	if jErr != nil {
 		j = []byte(`{"message": "Trouble marshalling success response"}`)
 		r.HTTPCode = 500

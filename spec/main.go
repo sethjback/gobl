@@ -28,13 +28,13 @@ type JobFile struct {
 
 // BackupJobRequest defines a request for a job sent to the AgentID
 type BackupJobRequest struct {
-	ID         int             `json:"id"`
+	ID         string          `json:"id"`
 	Paramiters BackupParamiter `json:"paramiters"`
 }
 
 // RestoreJobRequest defines a request for a job sent to the AgentID
 type RestoreJobRequest struct {
-	ID         int              `json:"id"`
+	ID         string           `json:"id"`
 	Paramiters RestoreParamiter `json:"paramiters"`
 }
 
@@ -99,10 +99,10 @@ type BackupParamiter struct {
 // is needed so that the modifications can be "undone" in the reverse order and
 // confirm that the "From" engine was actually used to backup the files
 type RestoreParamiter struct {
-	To               engine.Definition `json:"to"`
-	From             engine.Definition `json:"from"`
-	FileSignatures   []files.Signature `json:"files"`
-	BackupParamiters BackupParamiter   `json:"paramiters"`
+	To               []engine.Definition `json:"to"`
+	From             engine.Definition   `json:"from"`
+	FileSignatures   []files.Signature   `json:"files"`
+	BackupParamiters BackupParamiter     `json:"paramiters"`
 }
 
 // Schedule defines when a backup should run

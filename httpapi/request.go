@@ -89,6 +89,23 @@ func (r *Request) String() string {
 		body}, "\n")
 }
 
+func (r *Request) JsonBody(decodeTo interface{}) goblerr.Error {
+	if cType, ok := r.Headers["Content-Type"]; !ok || cType != "application/json" {
+		return goblerr.New("Body must be valid json", ErrorRequestBodyInvalid, "request", "Content-Type must be application/json")
+	}
+
+	b, err := ioutil.ReadAll(r.Body)
+	if err != nil {
+		return goblerr.New("Body not valid json", ErrorRequestBodyInvalid, "request", "read body failed")
+	}
+
+	if err = json.Unmarshal(b, decodeTo); err != nil {
+		return goblerr.New("Body not valid json", ErrorRequestBodyInvalid, "request", "json unmarshal failed")
+	}
+
+	return nil
+}
+
 // bodyHash returns the sha256 sum of the body
 func bodyHash(reader io.ReadSeeker) string {
 	hash := sha256.New()

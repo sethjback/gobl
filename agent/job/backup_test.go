@@ -113,7 +113,7 @@ func TestBuildBackupFileList(t *testing.T) {
 
 	fCount = 0
 
-	in, errc = buildBackupFileList(c, []model.Path{path})
+	in, _ = buildBackupFileList(c, []model.Path{path})
 	wg = &sync.WaitGroup{}
 	wg.Add(1)
 	go func() {

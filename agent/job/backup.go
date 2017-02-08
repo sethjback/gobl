@@ -24,6 +24,16 @@ type Backup struct {
 	Notifier    notification.Notifier
 }
 
+func NewBackup(job model.Job, coordinator config.Coordinator, notifier notification.Notifier) (*Backup, error) {
+	return &Backup{
+		stateM:      &sync.Mutex{},
+		Job:         job,
+		Coordinator: coordinator,
+		Notifier:    notifier,
+		MaxWorkers:  3,
+	}, nil
+}
+
 // Status for the jobber interface
 func (b *Backup) Status() model.JobMeta {
 	b.stateM.Lock()

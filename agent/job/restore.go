@@ -21,6 +21,16 @@ type Restore struct {
 	Notifier    notification.Notifier
 }
 
+func NewRestore(job model.Job, coordinator config.Coordinator, notifier notification.Notifier) (*Restore, error) {
+	return &Restore{
+		stateM:      &sync.Mutex{},
+		Job:         job,
+		Coordinator: coordinator,
+		MaxWorkers:  3,
+		Notifier:    notifier,
+	}, nil
+}
+
 // Status for the jobber interface
 func (r *Restore) Status() model.JobMeta {
 	r.stateM.Lock()

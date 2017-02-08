@@ -82,7 +82,7 @@ func createTestRestoreFile() (*files.File, error) {
 	}
 
 	var bbuf bytes.Buffer
-	gz, err := gzip.NewWriterLevel(&bbuf, 5)
+	gz, _ := gzip.NewWriterLevel(&bbuf, 5)
 	_, err = gz.Write(data)
 	if err != nil {
 		return nil, err
