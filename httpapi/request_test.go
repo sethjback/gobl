@@ -2,6 +2,7 @@ package httpapi
 
 import (
 	"bytes"
+	"net/http"
 	"net/url"
 	"testing"
 
@@ -33,8 +34,12 @@ func TestBodyHash(t *testing.T) {
 }
 
 func TestRequestString(t *testing.T) {
+	h := http.Header{}
+	h.Set(HeaderGoblDate, "1234")
+	h.Set("authorization", "Bearer asdf.asdf.asdf")
+
 	r := &Request{
-		Headers: map[string]string{HeaderGoblDate: "1234", "authorization": "Bearer asdf.asdf.asdf"},
+		Headers: h,
 		Body:    bytes.NewReader([]byte(`{"test1":"val1","test2":2}`)),
 		Host:    "test.com",
 		Path:    "/get/this",

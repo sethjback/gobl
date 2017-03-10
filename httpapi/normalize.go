@@ -43,9 +43,7 @@ func (n Normalize) ServeHTTP(rw http.ResponseWriter, r *http.Request, next http.
 	}
 
 	req := &Request{}
-
-	req.AddHeader("authorization", r.Header.Get("Authorization"))
-	req.AddHeader(HeaderGoblSig, r.Header.Get(HeaderGoblSig))
+	req.Headers = r.Header
 
 	if r.Body != nil {
 		body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
@@ -80,7 +78,6 @@ func (n Normalize) ServeHTTP(rw http.ResponseWriter, r *http.Request, next http.
 
 	ctx := r.Context()
 	next(rw, r.WithContext(context.WithValue(ctx, request, req)))
-
 }
 
 func validateTimestamp(timestamp string) (int, goblerr.Error) {

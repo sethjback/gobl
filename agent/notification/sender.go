@@ -28,11 +28,12 @@ type Result struct {
 
 func (s *Sender) Do() interface{} {
 	req := httpapi.Request{
-		Host:   s.message.note.Destination(),
-		Path:   "/notification", //TODO: need a place for this
-		Client: s.client,
-		Method: "POST",
-		Body:   bytes.NewReader(s.message.note.Body()),
+		Headers: http.Header{},
+		Host:    s.message.note.Destination(),
+		Path:    "/notification", //TODO: need a place for this
+		Client:  s.client,
+		Method:  "POST",
+		Body:    bytes.NewReader(s.message.note.Body()),
 	}
 
 	sig, err := s.signer.Sign([]byte(req.String()))
@@ -40,7 +41,7 @@ func (s *Sender) Do() interface{} {
 		return Result{state: Fail, err: err, message: s.message}
 	}
 
-	req.AddHeader(httpapi.HeaderGoblSig, sig)
+	req.Headers.Set(httpapi.HeaderGoblSig, sig)
 
 	resp, err := req.Send()
 	if err != nil || resp.HTTPCode != 200 {

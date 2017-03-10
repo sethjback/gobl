@@ -42,6 +42,9 @@ func Init(c *config.Config) error {
 	notifier = notification.New(&notification.Config{MaxWorkers: 3, MaxDepth: 6}, aKey)
 	notifier.Start()
 
+	finish = make(chan string)
+	running = true
+
 	go waiter()
 
 	return nil

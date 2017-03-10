@@ -25,6 +25,7 @@ type Backup struct {
 }
 
 func NewBackup(job model.Job, coordinator config.Coordinator, notifier notification.Notifier) (*Backup, error) {
+	job.Meta = &model.JobMeta{}
 	return &Backup{
 		stateM:      &sync.Mutex{},
 		Job:         job,
@@ -140,6 +141,8 @@ func (b *Backup) Run(finished chan<- string) {
 	case <-done:
 		//finished!
 	}
+
+	log.Debug("backupJob", "sending finish")
 
 	// notify our manager that we are done
 	finished <- b.Job.ID

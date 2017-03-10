@@ -18,6 +18,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/sethjback/gobl/goblerr"
+	"github.com/sethjback/gobl/util/log"
 )
 
 const (
@@ -42,7 +43,7 @@ const request key = 1
 // It implements context functions for the context.Context package so that
 // the rest of gobl can access the standardized parameters via the http.Request context
 type Request struct {
-	Headers         map[string]string
+	Headers         http.Header
 	RouteParameters httprouter.Params
 	Body            io.ReadSeeker
 	Host            string
@@ -55,13 +56,6 @@ type Request struct {
 // RequestFromContext returns the reqest that has been stored in a context
 func RequestFromContext(ctx context.Context) *Request {
 	return ctx.Value(request).(*Request)
-}
-
-func (r *Request) AddHeader(k, v string) {
-	if r.Headers == nil {
-		r.Headers = make(map[string]string)
-	}
-	r.Headers[k] = v
 }
 
 // String returns the request string that is appropriate for signing
@@ -77,8 +71,8 @@ func (r *Request) String() string {
 	}
 
 	var headers bytes.Buffer
-	headers.WriteString("authorization:" + r.Headers["authorization"] + "\n")
-	headers.WriteString(HeaderGoblDate + ":" + r.Headers[HeaderGoblDate])
+	headers.WriteString("authorization:" + r.Headers.Get("authorization") + "\n")
+	headers.WriteString(HeaderGoblDate + ":" + r.Headers.Get(HeaderGoblDate))
 
 	return strings.Join([]string{
 		r.Method,
@@ -90,7 +84,7 @@ func (r *Request) String() string {
 }
 
 func (r *Request) JsonBody(decodeTo interface{}) goblerr.Error {
-	if cType, ok := r.Headers["Content-Type"]; !ok || cType != "application/json" {
+	if cType := r.Headers.Get("Content-Type"); cType != "application/json" {
 		return goblerr.New("Body must be valid json", ErrorRequestBodyInvalid, "request", "Content-Type must be application/json")
 	}
 
@@ -100,6 +94,7 @@ func (r *Request) JsonBody(decodeTo interface{}) goblerr.Error {
 	}
 
 	if err = json.Unmarshal(b, decodeTo); err != nil {
+		log.Debug(err.Error())
 		return goblerr.New("Body not valid json", ErrorRequestBodyInvalid, "request", "json unmarshal failed")
 	}
 
@@ -163,7 +158,7 @@ func post(r *Request) (*Response, goblerr.Error) {
 		return nil, goblerr.New("Invalid request", ErrorRequestInvalid, "request", err)
 	}
 
-	req.Header.Set(HeaderGoblSig, r.Headers[HeaderGoblSig])
+	req.Header = r.Headers
 	req.Header.Set(HeaderGoblDate, strconv.Itoa(int(time.Now().UTC().Unix())))
 	req.Header.Set("Content-Type", "application/json")
 
@@ -202,7 +197,7 @@ func get(r *Request) (*Response, goblerr.Error) {
 		return nil, goblerr.New("Invalid request", ErrorRequestInvalid, "request", err)
 	}
 
-	req.Header.Set(HeaderGoblSig, r.Headers[HeaderGoblSig])
+	req.Header = r.Headers
 	req.Header.Set(HeaderGoblDate, strconv.Itoa(int(time.Now().UTC().Unix())))
 
 	if r.Client == nil {
