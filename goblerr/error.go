@@ -12,7 +12,7 @@ type Error interface {
 	Message() string
 
 	// Returns the origin error, nil of not set
-	Origin() error
+	Origin() string
 
 	// Returns the optional error details, nil if not set
 	Detail() interface{}
@@ -21,6 +21,6 @@ type Error interface {
 }
 
 // New returns a new error
-func New(message, code string, origin error, detail interface{}) Error {
+func New(message, code string, origin string, detail interface{}) Error {
 	return newBaseError(message, code, origin, detail)
 }

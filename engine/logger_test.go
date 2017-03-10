@@ -33,9 +33,9 @@ func TestLogger(t *testing.T) {
 	// buffered so the save routine doesn't block if there is an error
 	errc := make(chan error, 3)
 
-	fileSig := files.Signature{Name: "test1", Path: "/the/test/path"}
+	file := files.File{Signature: files.Signature{Path: "/the/test/path/test1"}}
 
-	l.Save(bytes.NewReader(dataToSave), fileSig, errc)
+	l.Save(bytes.NewReader(dataToSave), file, errc)
 
 	select {
 	case e := <-errc:
@@ -47,10 +47,10 @@ func TestLogger(t *testing.T) {
 	fData, err := ioutil.ReadFile("./testLog")
 	assert.Nil(err)
 
-	lline := &logLine{}
+	lline := &LogLine{}
 	err = json.Unmarshal(fData, lline)
 	assert.Nil(err)
-	assert.Equal(fileSig.Path+"/"+fileSig.Name, lline.File)
+	assert.Equal(file.Path, lline.File)
 	assert.Equal(len(dataToSave), int(lline.Bytes))
 
 	// make sure we don't overwrite
@@ -59,7 +59,7 @@ func TestLogger(t *testing.T) {
 
 	dataToSave2 := []byte("This is some test data to save that really should be saved and should be longer")
 
-	l.Save(bytes.NewReader(dataToSave2), fileSig, errc)
+	l.Save(bytes.NewReader(dataToSave2), file, errc)
 
 	select {
 	case e := <-errc:
@@ -68,12 +68,12 @@ func TestLogger(t *testing.T) {
 		//good
 	}
 
-	var ll []logLine
+	var ll []LogLine
 	f, err := os.Open("./testLog")
 	if assert.Nil(err) {
 		scanner := bufio.NewScanner(f)
 		for scanner.Scan() {
-			lline = &logLine{}
+			lline = &LogLine{}
 			err = json.Unmarshal(scanner.Bytes(), &lline)
 			if assert.Nil(err) {
 				ll = append(ll, *lline)
@@ -91,7 +91,7 @@ func TestLogger(t *testing.T) {
 	err = l.ConfigureSave(map[string]interface{}{"logPath": "./testLog", "overwrite": true})
 	assert.Nil(err)
 
-	l.Save(bytes.NewReader(dataToSave), fileSig, errc)
+	l.Save(bytes.NewReader(dataToSave), file, errc)
 
 	select {
 	case e := <-errc:
@@ -103,10 +103,10 @@ func TestLogger(t *testing.T) {
 	fData, err = ioutil.ReadFile("./testLog")
 	assert.Nil(err)
 
-	lline = &logLine{}
+	lline = &LogLine{}
 	err = json.Unmarshal(fData, &lline)
 	assert.Nil(err)
-	assert.Equal(fileSig.Path+"/"+fileSig.Name, lline.File)
+	assert.Equal(file.Path, lline.File)
 	assert.Equal(len(dataToSave), int(lline.Bytes))
 
 	err = os.Remove("./testLog")

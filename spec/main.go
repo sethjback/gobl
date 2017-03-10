@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/sethjback/gobl/engines"
+	"github.com/sethjback/gobl/engine"
 	"github.com/sethjback/gobl/files"
-	"github.com/sethjback/gobl/modifications"
+	"github.com/sethjback/gobl/modification"
 )
 
 const (
@@ -28,22 +28,22 @@ type JobFile struct {
 
 // BackupJobRequest defines a request for a job sent to the AgentID
 type BackupJobRequest struct {
-	ID         int             `json:"id"`
+	ID         string          `json:"id"`
 	Paramiters BackupParamiter `json:"paramiters"`
 }
 
 // RestoreJobRequest defines a request for a job sent to the AgentID
 type RestoreJobRequest struct {
-	ID         int              `json:"id"`
+	ID         string           `json:"id"`
 	Paramiters RestoreParamiter `json:"paramiters"`
 }
 
 // RestoreRequest defines the paramiters needed for starting a Restore job
 type RestoreRequest struct {
-	JobID int                `json:"job"`
-	From  engines.Definition `json:"from"`
-	To    engines.Definition `json:"to"`
-	Files []int              `json:"files"`
+	JobID int               `json:"job"`
+	From  engine.Definition `json:"from"`
+	To    engine.Definition `json:"to"`
+	Files []int             `json:"files"`
 }
 
 // JobFileRequest defines a file request sent to the coordinator
@@ -70,7 +70,7 @@ type Job struct {
 
 // BackupDefinition Defines a backup for the Coordinator
 type BackupDefinition struct {
-	ID         int             `json:id`
+	ID         int             `json:"id"`
 	Paramiters BackupParamiter `json:"paramiters"`
 	AgentID    int             `json:"agentid"`
 }
@@ -86,9 +86,9 @@ type BackupPath struct {
 // Engines to send the backup data to
 // Paths to be backed up
 type BackupParamiter struct {
-	Modifications []modifications.Definition `json:"modifications"`
-	Engines       []engines.Definition       `json:"engines"`
-	Paths         []BackupPath               `json:"paths"`
+	Modifications []modification.Definition `json:"modifications"`
+	Engines       []engine.Definition       `json:"engines"`
+	Paths         []BackupPath              `json:"paths"`
 }
 
 // RestoreParamiter represents the paramiters for a restore operation
@@ -99,10 +99,10 @@ type BackupParamiter struct {
 // is needed so that the modifications can be "undone" in the reverse order and
 // confirm that the "From" engine was actually used to backup the files
 type RestoreParamiter struct {
-	To               engines.Definition `json:"to"`
-	From             engines.Definition `json:"from"`
-	FileSignatures   []files.Signature  `json:"files"`
-	BackupParamiters BackupParamiter    `json:paramiters`
+	To               []engine.Definition `json:"to"`
+	From             engine.Definition   `json:"from"`
+	FileSignatures   []files.Signature   `json:"files"`
+	BackupParamiters BackupParamiter     `json:"paramiters"`
 }
 
 // Schedule defines when a backup should run

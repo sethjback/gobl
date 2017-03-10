@@ -69,8 +69,8 @@ func parsePublicKeyBytes(b []byte) (*rsa.PublicKey, error) {
 }
 
 // PublicKey exports the public key (DER) as a base64.URLEncoded string
-func (m *Manager) PublicKey() (string, error) {
-	pubASN1, err := x509.MarshalPKIXPublicKey(&m.PrivateKey.PublicKey)
+func PublicKey(pk *rsa.PrivateKey) (string, error) {
+	pubASN1, err := x509.MarshalPKIXPublicKey(pk.PublicKey)
 	if err != nil {
 		return "", err
 	}

@@ -1,115 +1,66 @@
 package apihandler
 
 import (
-	"encoding/json"
-	"errors"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"strconv"
-
-	"github.com/gorilla/mux"
+	"github.com/julienschmidt/httprouter"
 	"github.com/sethjback/gobl/agent/manager"
 	"github.com/sethjback/gobl/httpapi"
-	"github.com/sethjback/gobl/spec"
+	"github.com/sethjback/gobl/model"
 )
 
-func jobList(w http.ResponseWriter, r *http.Request) (*httpapi.APIResponse, error) {
+func jobList(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
 	jobs := manager.Status()
 
-	return &httpapi.APIResponse{Data: jobs, HTTPCode: 200}, nil
+	return httpapi.Response{Data: jobs, HTTPCode: 200}
 }
 
-func newRestoreJob(w http.ResponseWriter, r *http.Request) (*httpapi.APIResponse, error) {
-
-	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
+func newRestoreJob(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
+	var job model.Job
+	err := r.JsonBody(&job)
 	if err != nil {
-		return nil, httpapi.NewError("", "Request too large", 413)
+		return httpapi.Response{Error: err, HTTPCode: 400}
 	}
 
-	if err := r.Body.Close(); err != nil {
-		return nil, errors.New("")
-	}
-
-	restoreRequest := new(spec.RestoreJobRequest)
-	if err := json.Unmarshal(body, &restoreRequest); err != nil {
-		return nil, httpapi.NewError(err.Error(), "Invalid Request", 400)
-	}
-
-	if err = manager.VerifySignature(body, r.Header.Get("x-gobl-signature")); err != nil {
-		return nil, httpapi.NewError(err.Error(), "Invalid Signature", 401)
-	}
-
-	err = manager.NewRestore(*restoreRequest)
+	err = manager.NewRestore(job)
 	if err != nil {
-		if e, ok := err.(*manager.Error); ok {
-			return nil, httpapi.NewError(e.Source, e.Message, e.Code)
-		}
-		return nil, errors.New("")
+		return httpapi.Response{Error: err, HTTPCode: 400}
 	}
 
-	return &httpapi.APIResponse{HTTPCode: 201}, nil
+	return httpapi.Response{HTTPCode: 201}
 }
 
-func newBackupJob(w http.ResponseWriter, r *http.Request) (*httpapi.APIResponse, error) {
-
-	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
+func newBackupJob(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
+	var job model.Job
+	err := r.JsonBody(&job)
 	if err != nil {
-		return nil, httpapi.NewError("", "Request too large", 413)
+		return httpapi.Response{Error: err, HTTPCode: 400}
 	}
 
-	if err := r.Body.Close(); err != nil {
-		return nil, errors.New("")
-	}
-
-	backupRequest := new(spec.BackupJobRequest)
-	if err := json.Unmarshal(body, &backupRequest); err != nil {
-		return nil, httpapi.NewError(err.Error(), "Invalid Request", 400)
-	}
-
-	if err = manager.VerifySignature(body, r.Header.Get("x-gobl-signature")); err != nil {
-		return nil, httpapi.NewError(err.Error(), "Invalid Signature", 401)
-	}
-
-	err = manager.NewBackup(*backupRequest)
-
+	err = manager.NewBackup(job)
 	if err != nil {
-		if e, ok := err.(*manager.Error); ok {
-			return nil, httpapi.NewError(e.Source, e.Message, e.Code)
-		}
-		return nil, errors.New("")
+		return httpapi.Response{Error: err, HTTPCode: 400}
 	}
 
-	return &httpapi.APIResponse{HTTPCode: 201}, nil
+	return httpapi.Response{HTTPCode: 201}
 }
 
-func cancelJob(w http.ResponseWriter, r *http.Request) (*httpapi.APIResponse, error) {
-	vars := mux.Vars(r)
+func cancelJob(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
+	id := ps.ByName("id")
 
-	id, err := strconv.ParseInt(vars["jobId"], 10, 64)
+	err := manager.Cancel(id)
 	if err != nil {
-		return nil, httpapi.NewError(err.Error(), "Invalid job ID", 400)
+		return httpapi.Response{Error: err, HTTPCode: 400}
 	}
 
-	if _, err := manager.Cancel(int(id)); err != nil {
-		return nil, httpapi.NewError(err.Error(), "Problem Canceling Job", 500)
-	}
-
-	return &httpapi.APIResponse{HTTPCode: 200}, nil
+	return httpapi.Response{HTTPCode: 200}
 }
 
-func jobStatus(w http.ResponseWriter, r *http.Request) (*httpapi.APIResponse, error) {
-	vars := mux.Vars(r)
+func jobStatus(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
+	id := ps.ByName("id")
 
-	id, err := strconv.ParseInt(vars["jobId"], 10, 64)
+	jobStatus, err := manager.JobStatus(id)
 	if err != nil {
-		return nil, httpapi.NewError(err.Error(), "Invalid job ID", 400)
+		return httpapi.Response{Error: err, HTTPCode: 400}
 	}
 
-	jobStatus, found := manager.JobStatus(int(id))
-	if !found {
-		return nil, httpapi.NewError("", "I can't find that job ID", 404)
-	}
-
-	return &httpapi.APIResponse{Data: map[string]interface{}{vars["jobId"]: jobStatus}, HTTPCode: 200}, nil
+	return httpapi.Response{Data: map[string]interface{}{id: jobStatus}, HTTPCode: 200}
 }

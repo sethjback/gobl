@@ -36,7 +36,7 @@ func New(routes []Route) *Server {
 
 // Start listening on given address.
 // The shutdown function will be called before the server exits
-func (s Server) Start(c config.Server, shutdown func()) {
+func (s *Server) Start(c config.Server, shutdown func()) {
 	n := negroni.New()
 
 	if c.Compress {
@@ -52,7 +52,7 @@ func (s Server) Start(c config.Server, shutdown func()) {
 // wrapRoute returns a httprouter appropriate handler
 func wrapRoute(rh RouteHandler) httprouter.Handle {
 	return func(w http.ResponseWriter, r *http.Request, ps httprouter.Params) {
-		resp := rh(RequestFromContext(r.Context()))
+		resp := rh(RequestFromContext(r.Context()), ps)
 		resp.Write(w)
 	}
 }

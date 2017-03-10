@@ -1,5 +1,7 @@
 package httpapi
 
+import "github.com/julienschmidt/httprouter"
+
 // Route defines a single endpoint
 type Route struct {
 	// Method is the HTTP method to listen on
@@ -15,4 +17,4 @@ type Route struct {
 }
 
 // RouteHandler is the definition functions must meet to handle incoming requests
-type RouteHandler func(*Request) Response
+type RouteHandler func(*Request, httprouter.Params) Response

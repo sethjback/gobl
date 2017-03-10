@@ -28,10 +28,8 @@ type Server struct {
 	// ShutdownWait is the number of seconds to wait for backup processes
 	// to finish before stopping the server
 	ShutdownWait int `toml:"shutdown_wait"`
-}
 
-type Agent struct {
-	// PrivateKey is used to when communicating with the coordinator
+	// Private key for signing reqests sent to the coordinator
 	PrivateKey string `toml:"private_key"`
 }
 
@@ -39,17 +37,14 @@ type Agent struct {
 // This is used to tell gobl agents about the coordinator so that they can
 // confirm its identity when it connects
 type Coordinator struct {
-
-	// Address defines where the connections will be comming from
-	Address string `toml:"address"`
-
 	// PublicKey is the path to the coordinator's public key
 	PublicKey string `toml:"public_key"`
+	// Address of the coordinator managing this agent
+	Address string `toml:"address"`
 }
 
 // DB Config
 type DB struct {
-
 	// Path to the database file
 	Path string `toml:"path"`
 }

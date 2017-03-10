@@ -1,37 +1,29 @@
 package apihandler
 
 import (
-	"net/http"
-	"runtime"
 	"time"
 
+	"github.com/julienschmidt/httprouter"
 	"github.com/sethjback/gobl/agent/manager"
 	"github.com/sethjback/gobl/httpapi"
-	"github.com/sethjback/gobl/util/log"
 )
 
-func gc(w http.ResponseWriter, r *http.Request) (*httpapi.APIResponse, error) {
-	runtime.GC()
-	return &httpapi.APIResponse{HTTPCode: 200}, nil
-}
-
-func agentStatus(w http.ResponseWriter, r *http.Request) (*httpapi.APIResponse, error) {
-	log.Debug("apihandler", "agentStatus called")
+func agentStatus(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
 	status := make(map[string]interface{})
-
 	status["date"] = time.Now().String()
-
-	status["status"] = manager.Status()
-
-	return &httpapi.APIResponse{Data: status, HTTPCode: 200}, nil
-}
-
-func agentKey(w http.ResponseWriter, r *http.Request) (*httpapi.APIResponse, error) {
-	key, err := manager.GetKey()
-	if err != nil {
-		return nil, httpapi.NewError(err.Error(), "Server Error", 500)
+	mstate := manager.Status()
+	for k, v := range mstate {
+		status[k] = v
 	}
 
-	return &httpapi.APIResponse{Data: map[string]interface{}{"keyString": key}, HTTPCode: 200}, nil
+	return httpapi.Response{Data: status, HTTPCode: 200}
+}
 
+func agentKey(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
+	key, err := manager.Key()
+	if err != nil {
+		return httpapi.Response{Error: err, HTTPCode: 500}
+	}
+
+	return httpapi.Response{Data: map[string]interface{}{"keyString": key}, HTTPCode: 200}
 }
