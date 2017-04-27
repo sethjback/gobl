@@ -11,13 +11,15 @@ import (
 
 type Job struct {
 	ID         string         `json:"id"`
+	Agent      *Agent         `json:"agent,omitempty"`
 	Definition *JobDefinition `json:"definition"`
 	Meta       *JobMeta       `json:"meta"`
 }
 
 type JobDefinition struct {
+	ID            string                    `json:"id,omitempty"`
 	To            []engine.Definition       `json:"to"`
-	From          engine.Definition         `json:"from,omitempty"`
+	From          *engine.Definition        `json:"from,omitempty"`
 	Modifications []modification.Definition `json:"modifications"`
 	Paths         []Path                    `json:"paths,omitempty"`
 	Files         []files.File              `json:"files,omitempty"`

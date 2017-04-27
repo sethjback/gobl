@@ -5,167 +5,133 @@ import (
 	"encoding/json"
 	"errors"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/sethjback/gobl/coordinator/gobldb"
-	"github.com/sethjback/gobl/spec"
+	"github.com/sethjback/gobl/model"
 )
 
-// CreateBackupJob inserts a new backup job record into the DB and marks it Running
-func (d *SQLite) CreateBackupJob(b *spec.BackupDefinition) (*spec.Job, error) {
-	sql := "INSERT INTO " + jobsTable + " (jobtype, agent, definition, start, state) values(?, ?, ?, ?, ?)"
-
-	t := time.Now()
-	bs, err := json.Marshal(b.Paramiters)
+func (d *SQLite) SaveJob(job model.Job) error {
+	_, err := d.GetJob(job.ID)
 	if err != nil {
-		return nil, err
-	}
-
-	result, err := d.Connection.Exec(sql, "backup", b.AgentID, bs, t, spec.Running)
-	if err != nil {
-		return nil, err
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return nil, err
-	}
-
-	return &spec.Job{ID: int(id), JobType: "backup", Definition: b, Start: &t, State: spec.Running}, nil
-}
-
-// CreateRestoreJob inserts a restore job into the DB
-func (d *SQLite) CreateRestoreJob(agentID int, r *spec.RestoreRequest) (*spec.Job, error) {
-	sql := "INSERT INTO " + jobsTable + " (jobtype, agent, definition, start, state) values(?, ?, ?, ?, ?)"
-
-	t := time.Now()
-	rr, err := json.Marshal(r)
-	if err != nil {
-		return nil, err
-	}
-
-	result, err := d.Connection.Exec(sql, "restore", agentID, rr, t, spec.Running)
-	if err != nil {
-		return nil, err
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return nil, err
-	}
-
-	return &spec.Job{ID: int(id), JobType: "restore", Definition: r, Start: &t, State: spec.Running}, nil
-}
-
-// GetJob returns the given job spec
-func (d *SQLite) GetJob(id int) (*spec.Job, error) {
-	var start, end *time.Time
-	var state, agent int
-	var definition []byte
-	var message, jobType *string
-	err := d.Connection.QueryRow("SELECT * from "+jobsTable+" WHERE id=?", id).Scan(&id, &jobType, &agent, &definition, &start, &end, &state, &message)
-	switch {
-	case err == sql.ErrNoRows:
-		return nil, errors.New("No backup job with that ID")
-	case err != nil:
-		return nil, err
-	default:
-		jobSpec := &spec.Job{
-			ID:      id,
-			AgentID: agent,
-			JobType: *jobType,
-			Start:   start,
-			End:     end,
-			State:   state,
-			Message: message}
-		if *jobType == "backup" {
-			var bp spec.BackupParamiter
-			json.Unmarshal(definition, &bp)
-			jobSpec.Definition = bp
-		} else {
-			var rr spec.RestoreRequest
-			json.Unmarshal(definition, &rr)
-			jobSpec.Definition = rr
+		if err.Error() != "No job with that ID" {
+			return err
 		}
-		return jobSpec, nil
+
+		return d.insertJob(job)
 	}
+
+	return d.updateJob(job)
 }
 
-// UpdateJob updates a job's state, endtime, and message
-func (d *SQLite) UpdateJob(j *spec.Job) error {
-	sql := "UPDATE " + jobsTable + " set state=?, end=?, message=? WHERE id=?"
-	_, err := d.Connection.Exec(sql, j.State, j.End, j.Message, j.ID)
+func (d *SQLite) updateJob(job model.Job) error {
+	job.Agent = nil
+
+	data, err := json.Marshal(job)
 	if err != nil {
 		return err
 	}
 
-	return nil
+	_, err = d.Connection.Exec(
+		"UPDATE "+jobsTable+" SET start=?, end=?, state=?, data=? WHERE id=?",
+		job.Meta.Start.Unix(), job.Meta.End.Unix(), job.Meta.State, data, job.ID)
+
+	return err
 }
 
-// JobErrorCount returns the number of errors for a particular job
-func (d *SQLite) JobErrorCount(jobID int) (int, error) {
-	sql := "SELECT COUNT(id) FROM " + filesTable + " WHERE state=? AND job=?"
-	var count int
-	err := d.Connection.QueryRow(sql, spec.Errors, jobID).Scan(&count)
+func (d *SQLite) insertJob(job model.Job) error {
+	sID, err := d.getAgentSQLId(job.Agent.ID)
 	if err != nil {
-		return -1, err
+		return err
 	}
-	return count, nil
+
+	job.Agent = nil
+
+	data, err := json.Marshal(job)
+	if err != nil {
+		return err
+	}
+
+	_, err = d.Connection.Exec(
+		"INSERT INTO "+jobsTable+" (id, agent, start, end, state, data) values(?,?,?,?,?,?)",
+		job.ID, sID, job.Meta.Start.Unix(), job.Meta.End.Unix(), job.Meta.State, data)
+
+	return err
 }
 
-// JobQuery runs a query against the jobs table and returns a list of jobs conforming to the paramiters
-func (d *SQLite) JobQuery(params map[string]string) ([]*spec.Job, error) {
+func (d *SQLite) GetJob(id string) (*model.Job, error) {
+	var data []byte
+	var agentID int
+	err := d.Connection.QueryRow("SELECT agent, data FROM "+jobsTable+" WHERE id=?", id).Scan(&agentID, &data)
+	switch {
+	case err == sql.ErrNoRows:
+		return nil, errors.New("No job with that ID")
+	case err != nil:
+		return nil, err
+	default:
+		var def *model.Job
+		if err = json.Unmarshal(data, &def); err != nil {
+			return nil, err
+		}
 
+		if def.Agent, err = d.getAgent(agentID); err != nil {
+			return nil, err
+		}
+
+		return def, err
+	}
+}
+
+func (d *SQLite) GetJobs(filters map[string]string) ([]model.Job, error) {
 	var wheres []string
 	var vals []interface{}
 	limit := 10
 	offset := 0
 
-	for key, value := range params {
-		switch key {
+	for k, v := range filters {
+		k = strings.ToLower(k)
+		switch k {
 		case "state":
-			i, err := strconv.Atoi(value)
-			if err != nil {
-				return nil, errors.New("Invalid state flag")
-			}
 			wheres = append(wheres, "state=?")
-			vals = append(vals, i)
+			vals = append(vals, v)
 		case "start":
-			i, err := parseDate(value)
+			i, err := parseDate(v)
 			if err != nil {
 				return nil, errors.New("start: " + err.Error())
 			}
-			wheres = append(wheres, "start > datetime(?, 'unixepoch', 'localtime')")
+			wheres = append(wheres, "start > ?")
 			vals = append(vals, i)
 		case "end":
-			i, err := parseDate(value)
+			i, err := parseDate(v)
 			if err != nil {
 				return nil, errors.New("end: " + err.Error())
 			}
-			wheres = append(wheres, "end < datetime(?, 'unixepoch', 'localtime')")
+			wheres = append(wheres, "end < ?")
 			vals = append(vals, i)
 		case "agentid":
-			i, err := strconv.Atoi(value)
+			aid, err := d.getAgentSQLId(v)
 			if err != nil {
-				return nil, errors.New("Invalid agentid")
+				return nil, errors.New("Invalid agentId: " + err.Error())
 			}
 			wheres = append(wheres, "agent=?")
-			vals = append(vals, i)
+			vals = append(vals, aid)
 		case "limit":
-			i, err := strconv.Atoi(value)
+			i, err := strconv.Atoi(v)
 			if err != nil {
 				return nil, errors.New("invalid limit")
 			}
 			limit = i
 		case "offset":
-			i, err := strconv.Atoi(value)
+			i, err := strconv.Atoi(v)
 			if err != nil {
 				return nil, errors.New("invalid offset")
 			}
 			offset = i
 		}
 	}
-	sql := "SELECT * FROM " + jobsTable
+
+	sql := "SELECT id FROM " + jobsTable
 	if len(wheres) != 0 {
 		sql += " WHERE "
 		for i, w := range wheres {
@@ -183,37 +149,27 @@ func (d *SQLite) JobQuery(params map[string]string) ([]*spec.Job, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
-	var jobs []*spec.Job
-	for rows.Next() {
-		var jobType, message *string
-		var state, id, agent int
-		var definition []byte
-		var start, end *time.Time
+	var jobIDs []string
 
-		err := rows.Scan(&id, &jobType, &agent, &definition, &start, &end, &state, &message)
+	for rows.Next() {
+		var id string
+
+		err = rows.Scan(&id)
 		if err != nil {
 			return nil, err
 		}
+		jobIDs = append(jobIDs, id)
+	}
+	rows.Close()
 
-		jobSpec := &spec.Job{
-			ID:      id,
-			AgentID: agent,
-			JobType: *jobType,
-			Start:   start,
-			End:     end,
-			State:   state,
-			Message: message}
-		if *jobType == "backup" {
-			var bp spec.BackupParamiter
-			json.Unmarshal(definition, &bp)
-			jobSpec.Definition = bp
-		} else if *jobType == "restore" {
-			var rr spec.RestoreRequest
-			json.Unmarshal(definition, &rr)
-			jobSpec.Definition = rr
+	jobs := make([]model.Job, len(jobIDs))
+
+	for i, ID := range jobIDs {
+		j, err := d.GetJob(ID)
+		if err != nil {
+			return nil, err
 		}
-		jobs = append(jobs, jobSpec)
+		jobs[i] = *j
 	}
 
 	return jobs, nil

@@ -4,69 +4,86 @@ import (
 	"database/sql"
 	"errors"
 
-	"github.com/sethjback/gobl/spec"
+	"github.com/sethjback/gobl/model"
 )
 
-// AddAgent inserts an agent into the DB
-func (d *SQLite) AddAgent(s *spec.Agent) error {
-	sql := "INSERT INTO " + agentsTable + " (name, address, publicKey) values (?, ?, ?)"
-
-	result, err := d.Connection.Exec(sql, s.Name, s.Address, s.PublicKey)
+func (d *SQLite) SaveAgent(a model.Agent) error {
+	_, err := d.GetAgent(a.ID)
 	if err != nil {
-		return err
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return err
-	}
-
-	s.ID = int(id)
-	return nil
-}
-
-// AgentList returns a list of all agents in the DB
-func (d *SQLite) AgentList() ([]*spec.Agent, error) {
-	rows, err := d.Connection.Query("SELECT * from "+agentsTable, nil)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var agents []*spec.Agent
-
-	for rows.Next() {
-		var id int
-		var name, address, publicKey string
-		err := rows.Scan(&id, &name, &address, &publicKey)
-		if err != nil {
-			return nil, err
+		if err.Error() != "No agent with that ID" {
+			return err
 		}
-		agents = append(agents, &spec.Agent{id, name, address, publicKey})
+
+		return insertAgent(d, a)
 	}
-	return agents, nil
+
+	return updateAgent(d, a)
 }
 
-// GetAgent retrieves an agent from the DB
-func (d *SQLite) GetAgent(id int) (*spec.Agent, error) {
-	var name, address, publicKey string
-	err := d.Connection.QueryRow("SELECT * FROM "+agentsTable+" WHERE id=?", id).Scan(&id, &name, &address, &publicKey)
+func updateAgent(d *SQLite, a model.Agent) error {
+	sql := "UPDATE " + agentsTable + " set name=?, address=?, publicKey=? WHERE id=?"
+	_, err := d.Connection.Exec(sql, a.Name, a.Address, a.PublicKey, a.ID)
+	return err
+}
+
+func insertAgent(d *SQLite, a model.Agent) error {
+	sql := "INSERT INTO " + agentsTable + " (id, name, address, publicKey) values (?, ?, ?, ?)"
+
+	_, err := d.Connection.Exec(sql, a.ID, a.Name, a.Address, a.PublicKey)
+
+	return err
+}
+
+func (d *SQLite) getAgent(id int) (*model.Agent, error) {
+	var sID, name, address, publicKey string
+	err := d.Connection.QueryRow("SELECT id, name, address, publicKey FROM "+agentsTable+" WHERE _id=?", id).Scan(&sID, &name, &address, &publicKey)
 	switch {
 	case err == sql.ErrNoRows:
 		return nil, errors.New("No agent with that ID")
 	case err != nil:
 		return nil, err
 	default:
-		return &spec.Agent{id, name, address, publicKey}, nil
+		return &model.Agent{ID: sID, Name: name, Address: address, PublicKey: publicKey}, nil
 	}
 }
 
-// UpdateAgent puts the provided spec into the DB, overriding all old data
-func (d *SQLite) UpdateAgent(agent *spec.Agent) error {
-	sql := "UPDATE " + agentsTable + " set name=?, address=?, publicKey=? WHERE id=?"
-	_, err := d.Connection.Exec(sql, agent.Name, agent.Address, agent.PublicKey, agent.ID)
+func (d *SQLite) getAgentSQLId(id string) (int, error) {
+	var sID int
+	err := d.Connection.QueryRow("SELECT _id FROM "+agentsTable+" WHERE id=?", id).Scan(&sID)
+	return sID, err
+}
+
+// AgentList returns a list of all agents in the DB
+func (d *SQLite) AgentList() ([]model.Agent, error) {
+	rows, err := d.Connection.Query("SELECT id, name, address, publicKey from "+agentsTable, nil)
 	if err != nil {
-		return err
+		return nil, err
+	}
+	defer rows.Close()
+	var agents []model.Agent
+
+	for rows.Next() {
+		var ID, name, address, publicKey string
+		err := rows.Scan(&ID, &name, &address, &publicKey)
+		if err != nil {
+			return nil, err
+		}
+		agents = append(agents, model.Agent{ID: ID, Name: name, Address: address, PublicKey: publicKey})
 	}
 
-	return nil
+	return agents, nil
+}
+
+// GetAgent retrieves an agent from the DB
+func (d *SQLite) GetAgent(id string) (*model.Agent, error) {
+	var name, address, publicKey string
+	err := d.Connection.QueryRow("SELECT name, address, publicKey FROM "+agentsTable+" WHERE id=?", id).Scan(&name, &address, &publicKey)
+	switch {
+	case err == sql.ErrNoRows:
+		return nil, errors.New("No agent with that ID")
+	case err != nil:
+		return nil, err
+	default:
+		return &model.Agent{ID: id, Name: name, Address: address, PublicKey: publicKey}, nil
+	}
 }

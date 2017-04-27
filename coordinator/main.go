@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"strings"
 
 	"github.com/sethjback/gobl/config"
 	"github.com/sethjback/gobl/coordinator/apihandler"
@@ -21,7 +20,7 @@ func main() {
 	flag.StringVar(&cPath, "config", "", "Path to the config file")
 	flag.Parse()
 
-	conf, err := config.ParseConfig(cPath)
+	conf, err := config.Parse(cPath)
 	if err != nil {
 		fmt.Println("Error parsing config file:", err)
 		os.Exit(1)
@@ -36,14 +35,9 @@ func main() {
 		log.Fatalf("main", "Error initializing manager: %v", err)
 	}
 
-	httpAPI := new(httpapi.Server)
-
-	address := strings.Split(conf.Host.Address, ":")
-	if len(address) != 2 {
-		log.Fatalf("main", "Invalid host address. Must be in form ip:port")
-	}
-
-	httpAPI.Configure(apihandler.Routes)
-	httpAPI.Start(address[0], address[1])
-
+	httpAPI := httpapi.New(apihandler.Routes)
+	httpAPI.Start(conf.Server, func() {
+		log.Infof("main", "shutting down")
+		manager.Shutdown()
+	})
 }

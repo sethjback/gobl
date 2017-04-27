@@ -46,11 +46,6 @@ func TestBackup(t *testing.T) {
 				Options: map[string]interface{}{engine.LocalFileOptionSavePath: "saveDir", engine.LocalFileOptionOverwrite: false}}},
 	}
 
-	e := buildDirectoryTree()
-	if !assert.Nil(e) {
-		return
-	}
-	defer cleanUpDirectoryTree()
 	defer os.RemoveAll("btest.log")
 	defer os.RemoveAll("saveDir")
 
@@ -81,17 +76,11 @@ func TestBackup(t *testing.T) {
 
 	assert.Nil(err)
 	assert.Equal(20, fcount)
-
 }
 
 func TestBuildBackupFileList(t *testing.T) {
 	assert := assert.New(t)
 	log.Init(config.Log{Level: log.Level.Warn})
-
-	e := buildDirectoryTree()
-	if !assert.Nil(e) {
-		return
-	}
 
 	c := make(chan struct{})
 	path := model.Path{Root: "test"}
@@ -107,7 +96,7 @@ func TestBuildBackupFileList(t *testing.T) {
 	}()
 
 	wg.Wait()
-	e = <-errc
+	e := <-errc
 	assert.Nil(e)
 	assert.Equal(20, fCount)
 
@@ -128,8 +117,6 @@ func TestBuildBackupFileList(t *testing.T) {
 
 	wg.Wait()
 	assert.InDelta(10, fCount, 1)
-
-	cleanUpDirectoryTree()
 }
 
 func buildDirectoryTree() error {
@@ -137,11 +124,13 @@ func buildDirectoryTree() error {
 	if e != nil {
 		return e
 	}
+
 	for i := 0; i < 10; i++ {
 		e = ioutil.WriteFile("test/tfile"+strconv.Itoa(i), []byte("Test file"), os.ModePerm)
 		if e != nil {
 			return e
 		}
+
 	}
 
 	e = os.Mkdir("test/test1", os.ModePerm)
@@ -153,6 +142,7 @@ func buildDirectoryTree() error {
 		if e != nil {
 			return e
 		}
+
 	}
 
 	return nil

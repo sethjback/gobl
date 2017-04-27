@@ -39,6 +39,10 @@ func TestRestore(t *testing.T) {
 		return
 	}
 
+	defer os.Remove("rtest.log")
+	// local file save name will always be the same as the name is based on the fileSig
+	defer os.Remove("435f25614eb9b7f51ab7921c5ff09992")
+
 	r.Job.Definition = &model.JobDefinition{
 		Files: []files.File{*f},
 		Modifications: []modification.Definition{
@@ -47,7 +51,7 @@ func TestRestore(t *testing.T) {
 			engine.Definition{
 				Name:    engine.NameLogger,
 				Options: map[string]interface{}{engine.LoggerOptionLogPath: "rtest.log", engine.LoggerOptionOverwrite: false}}},
-		From: engine.Definition{
+		From: &engine.Definition{
 			Name:    engine.NameLocalFile,
 			Options: map[string]interface{}{engine.LocalFileOptionSavePath: "./", engine.LocalFileOptionOverwrite: false}},
 	}
@@ -68,10 +72,6 @@ func TestRestore(t *testing.T) {
 	if !assert.Len(lines, 2) {
 		return
 	}
-
-	os.Remove("rtest.log")
-	// local file save name will always be the same as the name is based on the fileSig
-	os.Remove("435f25614eb9b7f51ab7921c5ff09992")
 }
 
 func createTestRestoreFile() (*files.File, error) {

@@ -1,102 +1,218 @@
 package sqlite
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"strings"
 
-	"github.com/sethjback/gobl/files"
-	"github.com/sethjback/gobl/spec"
+	"github.com/sethjback/gobl/goblerr"
+	"github.com/sethjback/gobl/model"
 )
 
 // AddJobFile adds a file definition to given job id
-func (d *SQLite) AddJobFile(jobID int, f *spec.JobFile) error {
-	sql := "INSERT INTO " + filesTable + " (job, state, message, path, name, signature) values(?, ?, ?, ?, ?, ?)"
-	sigByte, err := json.Marshal(f.Signature)
+func (d *SQLite) SaveJobFile(jobID string, f model.JobFile) error {
+	split := strings.Split(f.File.Path, "/")
+	jobfile, err := d.getFile(jobID, strings.Join(split[:len(split)-1], "/"), split[len(split)-1])
 	if err != nil {
-		return err
+		if err.Error() != "Could not find that file" {
+			return err
+		}
+
+		return d.insertFile(jobID, f)
 	}
-	if _, err := d.Connection.Exec(sql, jobID, f.State, f.Message, f.Signature.Path, f.Signature.Name, sigByte); err != nil {
-		return err
-	}
-	return nil
+
+	return d.updatefile(jobfile.id, f)
 }
 
-// JobFiles selects a file list with the give path prefix
-func (d *SQLite) JobFiles(path string, jobID int) ([]*spec.JobFile, error) {
-	sql := "SELECT * FROM " + filesTable + " WHERE job=?"
-	rows, err := d.Connection.Query(sql, jobID)
+func (d *SQLite) insertFile(jobID string, jf model.JobFile) error {
+	values := []interface{}{jobID, jf.State}
+
+	split := strings.Split(jf.File.Path, "/")
+	values = append(values, len(split)-1)
+	values = append(values, strings.Join(split[:len(split)-1], "/"))
+	values = append(values, split[len(split)-1])
+
+	var b []byte
+	var e error
+	if jf.Error != nil {
+		b, e = json.Marshal(jf.Error)
+		if e != nil {
+			return errors.New("Unable to marshal error (" + e.Error() + ")")
+		}
+	}
+	values = append(values, b)
+
+	b, e = json.Marshal(jf.File)
+	if e != nil {
+		return errors.New("Unable to marshal file (" + e.Error() + ")")
+	}
+	values = append(values, b)
+
+	_, err := d.Connection.Exec(
+		"INSERT INTO "+filesTable+" (job, state, level, parent, name, error, file) values(?,?,?,?,?,?,?)",
+		values...)
+
+	return err
+}
+
+func (d *SQLite) updatefile(id int, jf model.JobFile) error {
+	values := []interface{}{jf.State}
+	split := strings.Split(jf.File.Path, "/")
+	values = append(values, len(split)-1)
+	values = append(values, strings.Join(split[:len(split)-1], "/"))
+	values = append(values, split[len(split)-1])
+
+	var b []byte
+	var e error
+	if jf.Error != nil {
+		b, e = json.Marshal(jf.Error)
+		if e != nil {
+			return errors.New("Unable to marshal error (" + e.Error() + ")")
+		}
+	}
+	values = append(values, b)
+
+	b, e = json.Marshal(jf.File)
+	if e != nil {
+		return errors.New("Unable to marshal file (" + e.Error() + ")")
+	}
+	values = append(values, b)
+
+	values = append(values, id)
+
+	_, err := d.Connection.Exec(
+		"UPDATE "+filesTable+" set state=?, level=?, parent=?, name=?, error=?, file=? where _id=?",
+		values...,
+	)
+
+	return err
+}
+
+func (d *SQLite) getFile(jobID, parent, filename string) (*jobFile, error) {
+	var job, state string
+	var er, file []byte
+	var id, level int
+
+	err := d.Connection.QueryRow("SELECT _id, job, state, error, file, level from files WHERE job = ? and parent = ? and name = ?", jobID, parent, filename).Scan(&id, &job, &state, &er, &file, &level)
+	switch {
+	case err == sql.ErrNoRows:
+		return nil, errors.New("Could not find that file")
+	case err != nil:
+		return nil, err
+	default:
+		def := &jobFile{
+			state: state,
+			id:    id,
+			level: level,
+		}
+		if len(er) != 0 {
+			def.err = goblerr.New("", "", "", nil)
+			err = json.Unmarshal(er, def.err)
+			if err != nil {
+				return nil, errors.New("Trouble unmarshalling error")
+			}
+		}
+		if len(file) != 0 {
+			err = json.Unmarshal(file, &def.file)
+			if err != nil {
+				return nil, errors.New("Trouble unmarshalling file")
+			}
+		}
+
+		return def, nil
+	}
+}
+
+func (d *SQLite) JobFiles(jobID string, filters map[string]string) ([]model.JobFile, error) {
+	var wheres []string
+	var vals []interface{}
+
+	wheres = append(wheres, "job=?")
+	vals = append(vals, jobID)
+
+	for k, v := range filters {
+		k = strings.ToLower(k)
+		switch k {
+		case "dir", "parent":
+			wheres = append(wheres, "parent=?")
+		case "state":
+			wheres = append(wheres, "state=?")
+		case "filename", "name":
+			wheres = append(wheres, "name=?")
+		}
+		vals = append(vals, v)
+	}
+
+	sql := "SELECT error, file, state from " + filesTable
+	if len(wheres) != 0 {
+		sql += " WHERE "
+		for i, w := range wheres {
+			if i == 0 {
+				sql += w
+			} else {
+				sql += " AND " + w
+			}
+		}
+	}
+
+	rows, err := d.Connection.Query(sql, vals...)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var files []*spec.JobFile
+	var jobFiles []model.JobFile
 
 	for rows.Next() {
-		var id, state int
-		var message, path, name *string
-		var signature, meta *[]byte
-		err := rows.Scan(&id, &jobID, &state, &message, &path, &name, &signature, &meta)
-		if err != nil {
-			return nil, err
+		var err, file []byte
+		var state string
+
+		e := rows.Scan(&err, &file, &state)
+		if e != nil {
+			return nil, e
 		}
 
-		jf := &spec.JobFile{
-			ID:    id,
-			State: state}
+		def := model.JobFile{State: state}
 
-		if message != nil {
-			jf.Message = *message
+		if len(err) != 0 {
+			def.Error = goblerr.New("", "", "", nil)
+			e = json.Unmarshal(err, &def.Error)
+			if e != nil {
+				return nil, errors.New("unable to unmarshal error (" + e.Error() + ")")
+			}
 		}
 
-		err = json.Unmarshal(*signature, &jf.Signature)
-		if err != nil {
-			return nil, err
+		e = json.Unmarshal(file, &def.File)
+		if e != nil {
+			return nil, errors.New("unable to unmarshal file (" + e.Error() + ")")
 		}
 
-		files = append(files, jf)
+		jobFiles = append(jobFiles, def)
 	}
 
-	return files, nil
+	return jobFiles, nil
 }
 
-// JobFileSignatures returns a list of the file signatures in the id list
-func (d *SQLite) JobFileSignatures(jobID int, fIDs []int) ([]files.Signature, error) {
+func (d *SQLite) JobDirectories(jobID, parent string) ([]string, error) {
+	split := strings.Split(parent, "/")
 
-	if len(fIDs) == 0 {
-		return nil, errors.New("Files id list cannot be empty")
-	}
-
-	sql := "SELECT signature FROM " + filesTable + " WHERE job=? and id in(?" + strings.Repeat(",?", len(fIDs)-1) + ")"
-	args := make([]interface{}, len(fIDs)+1)
-	args[0] = jobID
-	for i, j := range fIDs {
-		args[i+1] = j
-	}
-
-	rows, err := d.Connection.Query(sql, args...)
+	rows, err := d.Connection.Query(
+		"SELECT DISTINCT parent from "+filesTable+" WHERE job=? AND level=?",
+		jobID, len(split)-1,
+	)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var fileSigs []files.Signature
+	dirs := []string{}
 
 	for rows.Next() {
-		var signature []byte
-		err := rows.Scan(&signature)
+		var parent string
+		err = rows.Scan(&parent)
 		if err != nil {
 			return nil, err
 		}
-
-		var fs files.Signature
-
-		err = json.Unmarshal(signature, &fs)
-		if err != nil {
-			return nil, err
-		}
-
-		fileSigs = append(fileSigs, fs)
+		dirs = append(dirs, parent)
 	}
-
-	return fileSigs, nil
+	return dirs, nil
 }

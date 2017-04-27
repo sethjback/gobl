@@ -7,9 +7,9 @@ const (
 	definitionsTable = "definitions"
 	schedulesTable   = "schedules"
 
-	createAgentsTable      = "CREATE TABLE IF NOT EXISTS `agents` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `name` string, `address` string, `publicKey` string)"
-	createDefinitionsTable = "CREATE TABLE IF NOT EXISTS `definitions` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `agent` int, `paramiters` blob)"
-	createJobsTable        = "CREATE TABLE IF NOT EXISTS `jobs` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `jobtype` string, `agent` int, `definition` blob, `start` datetime, `end` datetime, `state` int, `message` string)"
-	createFilesTable       = "CREATE TABLE IF NOT EXISTS `files` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `job` int, `state` int, `message` string, `path` string, `name` string, `signature` blob, `meta` blob)"
-	createSchedulesTable   = "CREATE TABLE IF NOT EXISTS `schedules` (`id` INTEGER PRIMARY KEY AUTOINCREMENT, `backup` int, `schedule` blob)"
+	createAgentsTable      = "CREATE TABLE IF NOT EXISTS `agents` (`_id` INTEGER PRIMARY KEY AUTOINCREMENT, `id` string, `name` string, `address` string, `publicKey` string)"
+	createDefinitionsTable = "CREATE TABLE IF NOT EXISTS `definitions` (`_id` INTEGER PRIMARY KEY AUTOINCREMENT, `id` string, `data` blob)"
+	createJobsTable        = "CREATE TABLE IF NOT EXISTS `jobs` (`_id` INTEGER PRIMARY KEY AUTOINCREMENT, `id` string, `agent` integer, `start` datetime, `end` datetime, `state`, string, `data` blob)"
+	createFilesTable       = "CREATE TABLE IF NOT EXISTS `files` (`_id` INTEGER PRIMARY KEY AUTOINCREMENT, `job` string, `state` string, `error` blob, `file` blob, `level` int, `parent` string, `name` string)"
+	createSchedulesTable   = "CREATE TABLE IF NOT EXISTS `schedules` (`_id` INTEGER PRIMARY KEY AUTOINCREMENT, `id` string, `schedule` blob)"
 )

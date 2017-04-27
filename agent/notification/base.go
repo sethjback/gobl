@@ -74,8 +74,6 @@ func (n *baseNotifier) Stopped() bool {
 func (n *baseNotifier) Stop() {
 	n.stopLock.Lock()
 	n.stop = true
-	close(n.in)
-	close(n.send)
 	n.stopLock.Unlock()
 
 	//todo, wait on the waiter then flush pending and retry queue to disk
@@ -142,9 +140,15 @@ func (n *baseNotifier) manageQs() {
 
 		if n.Stopped() {
 			// closing send will start the shut down process:
-			// it will cause the sendign queue to stop and drain
+			// it will cause the sending queue to stop and drain
 			log.Debug("notifier", "We are stopped")
+			if send != nil {
+				close(send)
+			}
 			send = nil
+			if in != nil {
+				close(in)
+			}
 			in = nil
 			next = nil
 		} else {

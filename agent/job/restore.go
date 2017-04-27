@@ -87,7 +87,7 @@ func (r *Restore) Run(finished chan<- string) {
 	go func() {
 		r.addTotal(len(r.Job.Definition.Files))
 		for _, f := range r.Job.Definition.Files {
-			q.AddWork(work.Restore{File: f, From: r.Job.Definition.From, To: r.Job.Definition.To, Modifications: r.Job.Definition.Modifications})
+			q.AddWork(work.Restore{File: f, From: *r.Job.Definition.From, To: r.Job.Definition.To, Modifications: r.Job.Definition.Modifications})
 		}
 		q.Finish()
 	}()

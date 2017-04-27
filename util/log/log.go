@@ -55,7 +55,7 @@ func Fatalf(source string, format string, values ...interface{}) {
 // Error will log error level
 func Error(source string, values ...interface{}) {
 	if conf.Level >= Level.Error {
-		log(source, values)
+		log(source, values...)
 	}
 }
 
@@ -69,7 +69,7 @@ func Errorf(source string, format string, values ...interface{}) {
 // Warn will log warnings
 func Warn(source string, values ...interface{}) {
 	if conf.Level >= Level.Warn {
-		log(source, values)
+		log(source, values...)
 	}
 }
 
@@ -83,7 +83,7 @@ func Warnf(source string, format string, values ...interface{}) {
 // Info will log informational messages
 func Info(source string, values ...interface{}) {
 	if conf.Level >= Level.Info {
-		log(source, values)
+		log(source, values...)
 	}
 }
 
@@ -97,7 +97,7 @@ func Infof(source string, format string, values ...interface{}) {
 // Debug will log messages at the debug leve
 func Debug(source string, values ...interface{}) {
 	if conf.Level >= Level.Debug {
-		log(source, values)
+		log(source, values...)
 	}
 }
 
