@@ -17,11 +17,11 @@ type SQLite struct {
 // Init opens the DB and creates tables if necessary
 func (d *SQLite) Init(options config.DB) error {
 
-	if len(options.DBPath) == 0 {
-		log.Warnf("sqlite", "DB Path empty, this will create in-memory db: probably not what you wanted!")
+	if len(options.Path) == 0 {
+		log.Warn("sqlite", "DB Path empty, this will create in-memory db: probably not what you wanted!")
 	}
 
-	db, err := sql.Open("sqlite3", options.DBPath)
+	db, err := sql.Open("sqlite3", options.Path)
 	if err != nil {
 		return err
 	}
@@ -44,9 +44,10 @@ func (d *SQLite) Init(options config.DB) error {
 		return err
 	}
 	_, err = d.Connection.Exec(createSchedulesTable, "")
-	if err != nil {
-		return err
-	}
 
-	return nil
+	return err
+}
+
+func (d *SQLite) Close() error {
+	return d.Connection.Close()
 }

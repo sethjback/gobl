@@ -105,6 +105,7 @@ func TestBackupEngine(t *testing.T) {
 	donec := make(chan bool)
 
 	egn, ok, err = NewBackupEngine(file, t1)
+	assert.Nil(err)
 	assert.True(ok)
 	go func() {
 		_, cerr := io.Copy(egn, bytes.NewReader(toSave))
@@ -127,6 +128,7 @@ func TestBackupEngine(t *testing.T) {
 	file.Path = "asdf"
 
 	egn, ok, err = NewBackupEngine(file, t1, t2, t3, t4)
+	assert.Nil(err)
 	assert.True(ok)
 	go func() {
 		_, cerr := io.Copy(egn, bytes.NewReader(toSave))
@@ -168,6 +170,7 @@ func TestRestoreEngine(t *testing.T) {
 	donec := make(chan bool)
 
 	egn, err = NewRestoreEngine(file, t1)
+	assert.Nil(err)
 	go func() {
 		_, cerr := io.Copy(egn, bytes.NewReader(toSave))
 		donec <- assert.Nil(cerr)
@@ -189,6 +192,7 @@ func TestRestoreEngine(t *testing.T) {
 	file.Path = "asdf"
 
 	egn, err = NewRestoreEngine(file, t1, t2, t3, t4)
+	assert.Nil(err)
 	go func() {
 		_, cerr := io.Copy(egn, bytes.NewReader(toSave))
 		donec <- assert.Nil(cerr)

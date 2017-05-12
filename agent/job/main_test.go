@@ -1,7 +1,9 @@
 package job
 
 import (
+	"os"
 	"sync"
+	"testing"
 
 	"github.com/sethjback/gobl/agent/notification"
 )
@@ -33,4 +35,14 @@ func (t *tn) Send(note notification.Notification) {
 	t.m.Lock()
 	t.sent = append(t.sent, note)
 	t.m.Unlock()
+}
+
+func TestMain(m *testing.M) {
+	e := buildDirectoryTree()
+	if e != nil {
+		os.Exit(-1)
+	}
+	code := m.Run()
+	cleanUpDirectoryTree()
+	os.Exit(code)
 }

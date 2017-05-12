@@ -26,6 +26,10 @@ func New(routes []Route) *Server {
 			s.router.GET(r.Path, wrapRoute(r.Handler))
 		case "POST":
 			s.router.POST(r.Path, wrapRoute(r.Handler))
+		case "PUT":
+			s.router.PUT(r.Path, wrapRoute(r.Handler))
+		case "DELETE":
+			s.router.DELETE(r.Path, wrapRoute(r.Handler))
 		}
 	}
 

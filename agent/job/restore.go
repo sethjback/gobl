@@ -43,7 +43,7 @@ func (r *Restore) Status() model.JobMeta {
 func (r *Restore) Cancel() {
 	log.Infof("job", "Cancel restore: %v", r.Job.ID)
 	r.stateM.Lock()
-	r.Job.Meta.State = StateCanceling
+	r.Job.Meta.State = model.StateCanceling
 	close(r.cancel)
 	r.stateM.Unlock()
 }
@@ -77,7 +77,7 @@ func (r *Restore) Run(finished chan<- string) {
 	log.Infof("restoreJob", "running restorJob: %v", r.Job.ID)
 	log.Debugf("restoreJob", "Restore Job: %v", *r)
 
-	r.SetState(StateRunning)
+	r.SetState(model.StateRunning)
 	r.cancel = make(chan struct{})
 	r.Job.Meta.Start = time.Now()
 
@@ -87,7 +87,7 @@ func (r *Restore) Run(finished chan<- string) {
 	go func() {
 		r.addTotal(len(r.Job.Definition.Files))
 		for _, f := range r.Job.Definition.Files {
-			q.AddWork(work.Restore{File: f, From: r.Job.Definition.From, To: r.Job.Definition.To, Modifications: r.Job.Definition.Modifications})
+			q.AddWork(work.Restore{File: f, From: *r.Job.Definition.From, To: r.Job.Definition.To, Modifications: r.Job.Definition.Modifications})
 		}
 		q.Finish()
 	}()

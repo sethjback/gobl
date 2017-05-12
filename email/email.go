@@ -25,7 +25,7 @@ func SendEmail(conf config.Email, body string, subject string) error {
 	}
 	message += "\r\n" + body
 
-	connURL, err := url.Parse(conf.ServerAddress)
+	connURL, err := url.Parse(conf.Server)
 	if err != nil {
 		return err
 	}

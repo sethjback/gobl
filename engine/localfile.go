@@ -150,7 +150,7 @@ func hashFileSig(fileSig files.Signature) (string, error) {
 		return "", err
 	}
 
-	hash := md5.Sum([]byte(sig))
+	hash := md5.Sum(sig)
 	return hex.EncodeToString(hash[:]), nil
 }
 

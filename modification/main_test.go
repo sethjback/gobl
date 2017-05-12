@@ -23,7 +23,7 @@ func TestBuild(t *testing.T) {
 
 	defs = append(defs, Definition{Name: "asdf"})
 
-	mods, err = Build(defs, Forward)
+	_, err = Build(defs, Forward)
 	assert.NotNil(err)
 }
 

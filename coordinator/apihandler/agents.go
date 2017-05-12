@@ -1,97 +1,94 @@
 package apihandler
 
 import (
-	"encoding/json"
-	"errors"
-	"io"
-	"io/ioutil"
-	"net/http"
-	"strconv"
-
-	"github.com/gorilla/mux"
+	"github.com/google/uuid"
+	"github.com/julienschmidt/httprouter"
 	"github.com/sethjback/gobl/coordinator/manager"
 	"github.com/sethjback/gobl/httpapi"
-	"github.com/sethjback/gobl/spec"
+	"github.com/sethjback/gobl/model"
 )
 
-func agentList(w http.ResponseWriter, r *http.Request) (*httpapi.APIResponse, error) {
-	list, err := manager.Agents()
+func agentList(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
+	list, err := manager.GetAgents()
 	if err != nil {
-		return nil, httpapi.NewError(err.Error(), "Could not Read Agents", 500)
-	}
-	if list == nil {
-		list = make([]*spec.Agent, 0)
+		return httpapi.Response{Error: err, HTTPCode: 400}
 	}
 
-	return &httpapi.APIResponse{Data: map[string]interface{}{"agents": list}, HTTPCode: 200}, nil
+	return httpapi.Response{Data: map[string]interface{}{"agents": list}, HTTPCode: 200}
 }
 
-func addAgent(w http.ResponseWriter, r *http.Request) (*httpapi.APIResponse, error) {
-	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
+func addAgent(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
+	var a model.Agent
+	err := r.JsonBody(&a)
 	if err != nil {
-		return nil, httpapi.NewError("", "Request too large", 413)
+		return httpapi.Response{Error: err, HTTPCode: 400}
 	}
 
-	if err := r.Body.Close(); err != nil {
-		return nil, errors.New("")
+	id, e := manager.AddAgent(a)
+	if e != nil {
+		return httpapi.Response{Error: e, HTTPCode: 400}
 	}
 
-	agent := new(spec.Agent)
-	if err := json.Unmarshal(body, &agent); err != nil {
-		return nil, httpapi.NewError(err.Error(), "Invalid Request", 400)
-	}
-
-	err = manager.AddAgent(agent)
-	if err != nil {
-		return nil, httpapi.NewError(err.Error(), "Unable to add agent", 400)
-	}
-
-	return &httpapi.APIResponse{Data: map[string]interface{}{"id": agent.ID}, HTTPCode: 200}, nil
+	//TODO: add location header
+	return httpapi.Response{Data: map[string]interface{}{"id": id}, HTTPCode: 201}
 }
 
-func getAgent(w http.ResponseWriter, r *http.Request) (*httpapi.APIResponse, error) {
-	vars := mux.Vars(r)
+func getAgent(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
+	id := ps.ByName("id")
 
-	aID, err := strconv.ParseInt(vars["agentID"], 10, 64)
-	if err != nil {
-		return nil, httpapi.NewError(err.Error(), "Invalid Agent ID", 400)
+	_, e := uuid.Parse(id)
+	if e != nil {
+		return httpapi.Response{Error: e, HTTPCode: 400}
 	}
 
-	agent, err := manager.GetAgent(int(aID))
+	agent, err := manager.GetAgent(id)
 	if err != nil {
-		return nil, httpapi.NewError(err.Error(), "Unable to get agent", 400)
+		//TODO: need to return 404 if not found
+		return httpapi.Response{Error: err, HTTPCode: 400}
 	}
 
-	return &httpapi.APIResponse{Data: map[string]interface{}{"agent": agent}, HTTPCode: 200}, nil
+	return httpapi.Response{Data: map[string]interface{}{"agent": agent}, HTTPCode: 200}
 }
 
-func updateAgent(w http.ResponseWriter, r *http.Request) (*httpapi.APIResponse, error) {
-	body, err := ioutil.ReadAll(io.LimitReader(r.Body, 1048576))
+func agentStatus(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
+	id := ps.ByName("id")
+
+	_, e := uuid.Parse(id)
+	if e != nil {
+		return httpapi.Response{Error: e, HTTPCode: 400}
+	}
+
+	status, err := manager.GetAgentStatus(id)
 	if err != nil {
-		return nil, httpapi.NewError("", "Request too large", 413)
+		return httpapi.Response{Error: err, HTTPCode: 400}
 	}
 
-	if err := r.Body.Close(); err != nil {
-		return nil, errors.New("")
+	return httpapi.Response{Data: map[string]interface{}{"status": status}, HTTPCode: 200}
+}
+
+func updateAgent(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
+	id := ps.ByName("id")
+
+	_, e := uuid.Parse(id)
+	if e != nil {
+		return httpapi.Response{Error: e, HTTPCode: 400}
 	}
 
-	agent := new(spec.Agent)
-	if err := json.Unmarshal(body, &agent); err != nil {
-		return nil, httpapi.NewError(err.Error(), "Invalid Request", 400)
-	}
-
-	vars := mux.Vars(r)
-
-	aID, err := strconv.ParseInt(vars["agentID"], 10, 64)
+	var a model.Agent
+	err := r.JsonBody(&a)
 	if err != nil {
-		return nil, httpapi.NewError(err.Error(), "Invalid Agent ID", 400)
+		return httpapi.Response{Error: err, HTTPCode: 400}
+	}
+	a.ID = id
+
+	updateKey := false
+	if uk := ps.ByName("updateKey"); uk != "" {
+		updateKey = true
 	}
 
-	agent.ID = int(aID)
-
-	if err := manager.UpdateAgent(agent); err != nil {
-		return nil, httpapi.NewError(err.Error(), "Could not update agent", 400)
+	if err := manager.UpdateAgent(a, updateKey); err != nil {
+		return httpapi.Response{Error: e, HTTPCode: 400}
 	}
 
-	return &httpapi.APIResponse{HTTPCode: 200}, nil
+	return httpapi.Response{HTTPCode: 200}
 }

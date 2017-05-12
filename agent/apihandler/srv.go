@@ -6,6 +6,7 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/sethjback/gobl/agent/manager"
 	"github.com/sethjback/gobl/httpapi"
+	"github.com/sethjback/gobl/util/log"
 )
 
 func agentStatus(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
@@ -24,6 +25,7 @@ func agentKey(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
 	if err != nil {
 		return httpapi.Response{Error: err, HTTPCode: 500}
 	}
+	log.Debug("apihsndler", key)
 
 	return httpapi.Response{Data: map[string]interface{}{"keyString": key}, HTTPCode: 200}
 }

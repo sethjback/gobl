@@ -1,20 +1,15 @@
 package apihandler
 
 import (
-	"net/http"
 	"runtime"
 	"time"
 
+	"github.com/julienschmidt/httprouter"
 	"github.com/sethjback/gobl/coordinator/manager"
 	"github.com/sethjback/gobl/httpapi"
 )
 
-func gc(w http.ResponseWriter, r *http.Request) (*httpapi.APIResponse, error) {
-	runtime.GC()
-	return &httpapi.APIResponse{HTTPCode: 200}, nil
-}
-
-func coordinatorStatus(w http.ResponseWriter, r *http.Request) (*httpapi.APIResponse, error) {
+func coordinatorStatus(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
 	status := make(map[string]interface{})
 
 	status["date"] = time.Now().String()
@@ -26,13 +21,13 @@ func coordinatorStatus(w http.ResponseWriter, r *http.Request) (*httpapi.APIResp
 	status["goRoutines"] = goR
 	status["memory"] = memStat.Alloc
 
-	return &httpapi.APIResponse{Data: status, HTTPCode: 200}, nil
+	return httpapi.Response{Data: status, HTTPCode: 200}
 }
 
-func testEmail(w http.ResponseWriter, r *http.Request) (*httpapi.APIResponse, error) {
+func testEmail(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
 	err := manager.SendTestEmail()
 	if err != nil {
-		return nil, httpapi.NewError(err.Error(), "Unable to send test email", 400)
+		return httpapi.Response{Error: err, HTTPCode: 400}
 	}
-	return &httpapi.APIResponse{HTTPCode: 200}, nil
+	return httpapi.Response{HTTPCode: 200}
 }

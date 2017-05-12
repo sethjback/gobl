@@ -18,6 +18,7 @@ import (
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/sethjback/gobl/goblerr"
+	"github.com/sethjback/gobl/keys"
 	"github.com/sethjback/gobl/util/log"
 )
 
@@ -53,6 +54,15 @@ type Request struct {
 	Client          *http.Client
 }
 
+func NewRequest(host, path, method string) *Request {
+	return &Request{
+		Headers: http.Header{},
+		Host:    host,
+		Path:    path,
+		Method:  method,
+	}
+}
+
 // RequestFromContext returns the reqest that has been stored in a context
 func RequestFromContext(ctx context.Context) *Request {
 	return ctx.Value(request).(*Request)
@@ -81,6 +91,17 @@ func (r *Request) String() string {
 		query,
 		headers.String(),
 		body}, "\n")
+}
+
+func (r *Request) SetBody(body interface{}) error {
+	bbytes, err := json.Marshal(body)
+	if err != nil {
+		return err
+	}
+
+	r.Body = bytes.NewReader(bbytes)
+
+	return nil
 }
 
 func (r *Request) JsonBody(decodeTo interface{}) goblerr.Error {
@@ -141,7 +162,11 @@ func queryString(values url.Values) string {
 	return buff.String()
 }
 
-func (r *Request) Send() (*Response, goblerr.Error) {
+func (r *Request) Send(s keys.Signer) (*Response, goblerr.Error) {
+	err := prepAndSign(r, s)
+	if err != nil {
+		return nil, goblerr.New("Unable to sign message", ErrorRequestFailed, "request", err)
+	}
 	switch r.Method {
 	case "POST":
 		return post(r)
@@ -149,6 +174,22 @@ func (r *Request) Send() (*Response, goblerr.Error) {
 		return get(r)
 	}
 	return nil, goblerr.New("Invalid method", ErrorRequestInvalid, "request", "must be POST or GET")
+}
+
+func prepAndSign(r *Request, s keys.Signer) error {
+	if d := r.Headers.Get(HeaderGoblDate); d == "" {
+		r.Headers.Set(HeaderGoblDate, strconv.Itoa(int(time.Now().UTC().Unix())))
+	}
+
+	sig, err := s.Sign([]byte(r.String()))
+
+	if err != nil {
+		return err
+	}
+
+	r.Headers.Set(HeaderGoblSig, sig)
+
+	return nil
 }
 
 // Post a request

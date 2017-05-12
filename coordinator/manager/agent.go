@@ -2,50 +2,76 @@ package manager
 
 import (
 	"errors"
-	"strings"
 
+	"github.com/google/uuid"
 	"github.com/sethjback/gobl/httpapi"
 	"github.com/sethjback/gobl/keys"
-	"github.com/sethjback/gobl/spec"
+	"github.com/sethjback/gobl/model"
 )
 
 // Agents returns a list of all known agents
-func Agents() ([]*spec.Agent, error) {
-	return gDb.AgentList()
+func GetAgents() ([]model.Agent, error) {
+	aS, err := gDb.AgentList()
+	if aS == nil {
+		aS = make([]model.Agent, 0)
+	}
+	return aS, err
 }
 
 // AddAgent simply adds an agent to the system
-func AddAgent(agent *spec.Agent) error {
-
-	key, err := getAgentKey(agent)
+func AddAgent(agent model.Agent) (string, error) {
+	key, err := getAgentKey(agent, signer)
 	if err != nil {
-		return err
+		return "", err
 	}
-
-	agent.PublicKey = key
 
 	ks, err := keys.DecodePublicKeyString(key)
 	if err != nil {
-		return err
+		return "", err
+	}
+	agent.PublicKey = key
+	agent.ID = uuid.New().String()
+
+	err = gDb.SaveAgent(agent)
+	if err != nil {
+		return "", err
 	}
 
-	ip := strings.Split(agent.Address, ":")
-	keyManager.PublicKeys[ip[0]] = ks
-
-	return gDb.AddAgent(agent)
+	verifiers[agent.ID] = keys.NewVerifier(ks)
+	return agent.ID, nil
 }
 
 // GetAgent returns the stored agent information
-func GetAgent(agentID int) (*spec.Agent, error) {
+func GetAgent(agentID string) (*model.Agent, error) {
 	return gDb.GetAgent(agentID)
 }
 
+func GetAgentStatus(agentID string) (map[string]interface{}, error) {
+	agent, err := gDb.GetAgent(agentID)
+	if err != nil {
+		return nil, err
+	}
+
+	return getAgentStatus(*agent, signer)
+}
+
+func getAgentStatus(agent model.Agent, s keys.Signer) (map[string]interface{}, error) {
+	aR := httpapi.NewRequest(agent.Address, "/status", "GET")
+
+	response, err := aR.Send(s)
+	if err != nil {
+		return nil, err
+	}
+
+	return response.Data, nil
+}
+
 // agentKey contacts the given agentID and retrieves it's public key
-func getAgentKey(agent *spec.Agent) (string, error) {
+func getAgentKey(agent model.Agent, s keys.Signer) (string, error) {
+	aR := httpapi.NewRequest(agent.Address, "/key", "GET")
+	//aR := &httpapi.Request{Host: agent.Address, Path: "/key", Method: "GET"}
 
-	aR := &httpapi.APIRequest{Address: agent.Address}
-
-	response, err := aR.GET("/key")
+	response, err := aR.Send(s)
 	if err != nil {
 		return "", err
 	}
@@ -59,6 +85,27 @@ func getAgentKey(agent *spec.Agent) (string, error) {
 }
 
 // UpdateAgent updates the information for given agent id
-func UpdateAgent(agent *spec.Agent) error {
-	return nil
+func UpdateAgent(agent model.Agent, loadKey bool) error {
+	current, err := gDb.GetAgent(agent.ID)
+	if err != nil {
+		return err
+	}
+
+	if loadKey {
+		key, err := getAgentKey(agent, signer)
+		if err != nil {
+			return err
+		}
+
+		ks, err := keys.DecodePublicKeyString(key)
+		if err != nil {
+			return err
+		}
+		agent.PublicKey = key
+		verifiers[agent.ID] = keys.NewVerifier(ks)
+	} else {
+		agent.PublicKey = current.PublicKey
+	}
+
+	return gDb.SaveAgent(agent)
 }

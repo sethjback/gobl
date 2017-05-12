@@ -118,6 +118,9 @@ func (e *Logger) recordAndSave(reader io.Reader, file files.File, errc chan<- er
 	}
 	_, err = lfile.WriteString(string(dataBytes) + "\n")
 	lfile.Close()
+	if err != nil {
+		errc <- err
+	}
 }
 
 func (e *Logger) configure(options map[string]interface{}) error {
