@@ -58,14 +58,9 @@ func TestJobs(t *testing.T) {
 		Agent:      &a,
 		Definition: &jd,
 		Meta: &model.JobMeta{
-			State:    "running",
-			Start:    time.Now(),
-			End:      time.Now(),
-			Duration: -1,
-			Total:    1,
-			Complete: 0,
-			Skipped:  500,
-			Errors:   42,
+			State: "running",
+			Start: time.Now(),
+			End:   time.Now(),
 		},
 	}
 
@@ -77,9 +72,6 @@ func TestJobs(t *testing.T) {
 		assert.Equal(j, *j1)
 	}
 
-	j.Meta.Duration = 100
-	j.Meta.Complete = 100
-	j.Meta.Skipped = 100
 	j.Meta.State = "finished"
 
 	err = s.SaveJob(j)
@@ -107,14 +99,62 @@ func TestJobs(t *testing.T) {
 		Agent:      &a1,
 		Definition: &jd,
 		Meta: &model.JobMeta{
-			State:    "finished",
-			Start:    time.Date(2017, time.January, 1, 12, 12, 12, 0, time.UTC),
-			End:      time.Date(2017, time.January, 2, 12, 12, 12, 0, time.UTC),
-			Duration: -1,
-			Total:    1,
-			Complete: 0,
-			Skipped:  500,
-			Errors:   42,
+			State: "finished",
+			Start: time.Date(2017, time.January, 1, 12, 12, 12, 0, time.UTC),
+			End:   time.Date(2017, time.January, 2, 12, 12, 12, 0, time.UTC),
+		},
+	}
+
+	err = s.SaveJob(j)
+	assert.Nil(err)
+
+	j = model.Job{
+		ID:         uuid.New().String(),
+		Agent:      &a1,
+		Definition: &jd,
+		Meta: &model.JobMeta{
+			State: "finished",
+			Start: time.Date(2017, time.January, 1, 12, 12, 12, 0, time.UTC),
+			End:   time.Date(2017, time.January, 2, 12, 12, 12, 0, time.UTC),
+		},
+	}
+	err = s.SaveJob(j)
+	assert.Nil(err)
+
+	j = model.Job{
+		ID:         uuid.New().String(),
+		Agent:      &a,
+		Definition: &jd,
+		Meta: &model.JobMeta{
+			State: "finished",
+			Start: time.Date(2017, time.January, 1, 12, 12, 12, 0, time.UTC),
+			End:   time.Date(2017, time.January, 2, 12, 12, 12, 0, time.UTC),
+		},
+	}
+	err = s.SaveJob(j)
+	assert.Nil(err)
+
+	j = model.Job{
+		ID:         uuid.New().String(),
+		Agent:      &a,
+		Definition: &jd,
+		Meta: &model.JobMeta{
+			State: "finished",
+			Start: time.Date(2017, time.February, 1, 12, 12, 12, 0, time.UTC),
+			End:   time.Date(2017, time.February, 2, 12, 12, 12, 0, time.UTC),
+		},
+	}
+	err = s.SaveJob(j)
+	assert.Nil(err)
+
+	j = model.Job{
+		ID:         uuid.New().String(),
+		Agent:      &a,
+		Definition: &jd,
+		Meta: &model.JobMeta{
+			State: "running",
+			Start: time.Now(),
+			End:   time.Now(),
 		},
 	}
 	err = s.SaveJob(j)
@@ -125,86 +165,9 @@ func TestJobs(t *testing.T) {
 		Agent:      &a1,
 		Definition: &jd,
 		Meta: &model.JobMeta{
-			State:    "finished",
-			Start:    time.Date(2017, time.January, 1, 12, 12, 12, 0, time.UTC),
-			End:      time.Date(2017, time.January, 2, 12, 12, 12, 0, time.UTC),
-			Duration: -1,
-			Total:    1,
-			Complete: 0,
-			Skipped:  500,
-			Errors:   42,
-		},
-	}
-	err = s.SaveJob(j)
-	assert.Nil(err)
-
-	j = model.Job{
-		ID:         uuid.New().String(),
-		Agent:      &a,
-		Definition: &jd,
-		Meta: &model.JobMeta{
-			State:    "finished",
-			Start:    time.Date(2017, time.January, 1, 12, 12, 12, 0, time.UTC),
-			End:      time.Date(2017, time.January, 2, 12, 12, 12, 0, time.UTC),
-			Duration: -1,
-			Total:    1,
-			Complete: 0,
-			Skipped:  500,
-			Errors:   42,
-		},
-	}
-	err = s.SaveJob(j)
-	assert.Nil(err)
-
-	j = model.Job{
-		ID:         uuid.New().String(),
-		Agent:      &a,
-		Definition: &jd,
-		Meta: &model.JobMeta{
-			State:    "finished",
-			Start:    time.Date(2017, time.February, 1, 12, 12, 12, 0, time.UTC),
-			End:      time.Date(2017, time.February, 2, 12, 12, 12, 0, time.UTC),
-			Duration: -1,
-			Total:    1,
-			Complete: 0,
-			Skipped:  500,
-			Errors:   42,
-		},
-	}
-	err = s.SaveJob(j)
-	assert.Nil(err)
-
-	j = model.Job{
-		ID:         uuid.New().String(),
-		Agent:      &a,
-		Definition: &jd,
-		Meta: &model.JobMeta{
-			State:    "running",
-			Start:    time.Now(),
-			End:      time.Now(),
-			Duration: -1,
-			Total:    1,
-			Complete: 0,
-			Skipped:  500,
-			Errors:   42,
-		},
-	}
-	err = s.SaveJob(j)
-	assert.Nil(err)
-
-	j = model.Job{
-		ID:         uuid.New().String(),
-		Agent:      &a1,
-		Definition: &jd,
-		Meta: &model.JobMeta{
-			State:    "running",
-			Start:    time.Now(),
-			End:      time.Now(),
-			Duration: -1,
-			Total:    1,
-			Complete: 0,
-			Skipped:  500,
-			Errors:   42,
+			State: "running",
+			Start: time.Now(),
+			End:   time.Now(),
 		},
 	}
 	err = s.SaveJob(j)

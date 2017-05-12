@@ -6,15 +6,6 @@ import (
 	"github.com/sethjback/gobl/model"
 )
 
-const (
-	StateNew          = "new"
-	StateConfigured   = "configured"
-	StateRunning      = "running"
-	StateCanceling    = "canceling"
-	StateNotification = "notifications"
-	StateFinished     = "finished"
-)
-
 // Jobber
 type Jobber interface {
 	Run(done chan<- string)

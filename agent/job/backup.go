@@ -47,7 +47,7 @@ func (b *Backup) Status() model.JobMeta {
 func (b *Backup) Cancel() {
 	log.Infof("job", "Canceling backup: %v", b.Job.ID)
 	b.stateM.Lock()
-	b.Job.Meta.State = StateCanceling
+	b.Job.Meta.State = model.StateCanceling
 	close(b.cancel)
 	b.stateM.Unlock()
 }
@@ -82,7 +82,7 @@ func (b *Backup) Run(finished chan<- string) {
 	log.Infof("backupJob", "running backupJob: %v", b.Job.ID)
 	log.Debugf("backupJob", "Backup Job: %v", *b)
 
-	b.SetState(StateRunning)
+	b.SetState(model.StateRunning)
 	b.cancel = make(chan struct{})
 	b.Job.Meta.Start = time.Now()
 

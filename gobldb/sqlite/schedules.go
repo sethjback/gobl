@@ -6,33 +6,7 @@ import (
 	"errors"
 
 	"github.com/sethjback/gobl/model"
-	"github.com/sethjback/gobl/spec"
 )
-
-// AddSchedule saves a schedule to the DB
-func (d *SQLite) AddSchedule(s *spec.Schedule) error {
-
-	sql := "INSERT INTO " + schedulesTable + " (backup, schedule) values(?, ?)"
-
-	sched, err := json.Marshal(s)
-	if err != nil {
-		return errors.New("Could not marshal schedule")
-	}
-
-	result, err := d.Connection.Exec(sql, s.Backup, sched)
-	if err != nil {
-		return err
-	}
-
-	id, err := result.LastInsertId()
-	if err != nil {
-		return nil
-	}
-
-	s.ID = int(id)
-
-	return nil
-}
 
 func (d *SQLite) SaveSchedule(s model.Schedule) error {
 	_, err := d.getSchedule(s.ID)

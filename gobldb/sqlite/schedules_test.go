@@ -21,14 +21,15 @@ func TestSchedule(t *testing.T) {
 	defer s.Close()
 
 	sc := model.Schedule{
-		ID:      uuid.New().String(),
-		JobID:   uuid.New().String(),
-		Seconds: "0",
-		Minutes: "0",
-		Hour:    "0",
-		DOM:     "*",
-		MON:     "*",
-		DOW:     "*",
+		ID:              uuid.New().String(),
+		JobDefinitionID: uuid.New().String(),
+		AgentID:         uuid.New().String(),
+		Seconds:         "0",
+		Minutes:         "0",
+		Hour:            "0",
+		DOM:             "*",
+		MON:             "*",
+		DOW:             "*",
 	}
 
 	err = s.SaveSchedule(sc)
@@ -51,28 +52,30 @@ func TestSchedule(t *testing.T) {
 	}
 
 	sc2 := model.Schedule{
-		ID:      uuid.New().String(),
-		JobID:   uuid.New().String(),
-		Seconds: "0",
-		Minutes: "0",
-		Hour:    "0",
-		DOM:     "*",
-		MON:     "*",
-		DOW:     "*",
+		ID:              uuid.New().String(),
+		JobDefinitionID: uuid.New().String(),
+		AgentID:         uuid.New().String(),
+		Seconds:         "0",
+		Minutes:         "0",
+		Hour:            "0",
+		DOM:             "*",
+		MON:             "*",
+		DOW:             "*",
 	}
 
 	err = s.SaveSchedule(sc2)
 	assert.Nil(err)
 
 	sc3 := model.Schedule{
-		ID:      uuid.New().String(),
-		JobID:   uuid.New().String(),
-		Seconds: "0",
-		Minutes: "0",
-		Hour:    "0",
-		DOM:     "*",
-		MON:     "*",
-		DOW:     "*",
+		ID:              uuid.New().String(),
+		JobDefinitionID: uuid.New().String(),
+		AgentID:         uuid.New().String(),
+		Seconds:         "0",
+		Minutes:         "0",
+		Hour:            "0",
+		DOM:             "*",
+		MON:             "*",
+		DOW:             "*",
 	}
 
 	err = s.SaveSchedule(sc3)
@@ -91,7 +94,9 @@ func TestSchedule(t *testing.T) {
 
 	sch, err = s.ScheduleList()
 	if assert.Nil(err) {
+		assert.Len(sch, 2)
 		assert.Contains(sch, sc)
 		assert.Contains(sch, sc2)
+		assert.NotContains(sch, sc3)
 	}
 }

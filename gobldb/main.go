@@ -5,7 +5,7 @@ import (
 	"github.com/sethjback/gobl/model"
 )
 
-// QueryDateFormat defines the format we want dates in for the joblist queries
+// QueryDateFormat defines the format we want dates in
 const QueryDateFormat = "2006-01-02 15:04"
 
 // Database is the interface that must be implemented by the DB driver
@@ -14,13 +14,13 @@ type Database interface {
 	Close() error
 
 	// AGENTS
-	SaveAgent(*model.Agent) error
+	SaveAgent(model.Agent) error
 	GetAgent(id string) (*model.Agent, error)
 	AgentList() ([]model.Agent, error)
 
 	// Job Definitions
 	SaveJobDefinition(model.JobDefinition) error
-	DeleteJobDefinition(model.JobDefinition) error
+	DeleteJobDefinition(id string) error
 	GetJobDefinition(string) (*model.JobDefinition, error)
 	GetJobDefinitions() ([]model.JobDefinition, error)
 
@@ -29,12 +29,12 @@ type Database interface {
 	GetJob(id string) (*model.Job, error)
 	GetJobs(filters map[string]string) ([]model.Job, error)
 
-	AddJobFile(jobID string, jobfile model.JobFile) error
-	JobFiles(filters map[string]string) ([]model.JobFile, error)
+	SaveJobFile(jobID string, jobfile model.JobFile) error
+	JobFiles(jobID string, filters map[string]string) ([]model.JobFile, error)
 	JobDirectories(jobID, parent string) ([]string, error)
 
 	// SCHEDULES
-	SaveSchedule(*model.Schedule) error
+	SaveSchedule(model.Schedule) error
 	DeleteSchedule(id string) error
 	ScheduleList() ([]model.Schedule, error)
 }

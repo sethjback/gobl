@@ -3,6 +3,8 @@
 package manager
 
 import (
+	"crypto/rsa"
+	"fmt"
 	"runtime"
 	"sync"
 
@@ -29,17 +31,19 @@ var conf *config.Config
 var notifier notification.Notifier
 var finish chan string
 var running bool
+var akey *rsa.PrivateKey
 
 // Init configures the manager
 func Init(c *config.Config) error {
 	conf = c
+	var err error
 
-	aKey, err := keys.OpenPrivateKey(conf.Server.PrivateKey)
+	akey, err = keys.OpenPrivateKey(conf.Server.PrivateKey)
 	if err != nil {
 		return err
 	}
 
-	notifier = notification.New(&notification.Config{MaxWorkers: 3, MaxDepth: 6}, aKey)
+	notifier = notification.New(&notification.Config{MaxWorkers: 3, MaxDepth: 6}, akey)
 	notifier.Start()
 
 	finish = make(chan string)
@@ -172,12 +176,8 @@ func jobIds() []string {
 }
 
 func Key() (string, goblerr.Error) {
-	aKey, err := keys.OpenPrivateKey(conf.Server.PrivateKey)
-	if err != nil {
-		return "", goblerr.New("Unable to open key", ErrorReadKey, "manager", err.Error())
-	}
-
-	pks, err := keys.PublicKey(aKey)
+	fmt.Printf("Key: %+v\n\n", akey)
+	pks, err := keys.PublicKey(akey)
 	if err != nil {
 		return "", goblerr.New("Unable to open key", ErrorDecodeKey, "manager", err.Error())
 	}

@@ -36,14 +36,7 @@ func (s *Sender) Do() interface{} {
 		Body:    bytes.NewReader(s.message.note.Body()),
 	}
 
-	sig, err := s.signer.Sign([]byte(req.String()))
-	if err != nil {
-		return Result{state: Fail, err: err, message: s.message}
-	}
-
-	req.Headers.Set(httpapi.HeaderGoblSig, sig)
-
-	resp, err := req.Send()
+	resp, err := req.Send(s.signer)
 	if err != nil || resp.HTTPCode != 200 {
 		return &Result{state: Retry, err: err, message: s.message}
 	}

@@ -144,19 +144,20 @@ func (d *SQLite) JobFiles(jobID string, filters map[string]string) ([]model.JobF
 		vals = append(vals, v)
 	}
 
-	sql := "SELECT error, file, state from " + filesTable
+	ss := "SELECT error, file, state FROM " + filesTable
+
 	if len(wheres) != 0 {
-		sql += " WHERE "
+		ss += " WHERE "
 		for i, w := range wheres {
 			if i == 0 {
-				sql += w
+				ss += w
 			} else {
-				sql += " AND " + w
+				ss += " AND " + w
 			}
 		}
 	}
 
-	rows, err := d.Connection.Query(sql, vals...)
+	rows, err := d.Connection.Query(ss, vals...)
 	if err != nil {
 		return nil, err
 	}
@@ -191,6 +192,49 @@ func (d *SQLite) JobFiles(jobID string, filters map[string]string) ([]model.JobF
 	}
 
 	return jobFiles, nil
+}
+
+func (d *SQLite) jobFilesCount(jobID string, filters map[string]string) (int, error) {
+	var wheres []string
+	var vals []interface{}
+
+	wheres = append(wheres, "job=?")
+	vals = append(vals, jobID)
+
+	for k, v := range filters {
+		k = strings.ToLower(k)
+		switch k {
+		case "dir", "parent":
+			wheres = append(wheres, "parent=?")
+		case "state":
+			wheres = append(wheres, "state=?")
+		case "filename", "name":
+			wheres = append(wheres, "name=?")
+		}
+		vals = append(vals, v)
+	}
+
+	ss := "SELECT COUNT(*) FROM " + filesTable
+
+	if len(wheres) != 0 {
+		ss += " WHERE "
+		for i, w := range wheres {
+			if i == 0 {
+				ss += w
+			} else {
+				ss += " AND " + w
+			}
+		}
+	}
+
+	row := d.Connection.QueryRow(ss, vals...)
+	if row == nil {
+		return -1, errors.New("Query failed")
+	}
+	var count int
+	err := row.Scan(&count)
+
+	return count, err
 }
 
 func (d *SQLite) JobDirectories(jobID, parent string) ([]string, error) {

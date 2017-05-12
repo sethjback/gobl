@@ -137,4 +137,14 @@ func TestFiles(t *testing.T) {
 		assert.Len(jfs, 3)
 	}
 
+	jfc, err := s.jobFilesCount(jobID, map[string]string{"state": "failed"})
+	if assert.Nil(err) {
+		assert.Equal(3, jfc)
+	}
+
+	jfc, err = s.jobFilesCount(jobID, map[string]string{})
+	if assert.Nil(err) {
+		assert.Equal(8, jfc)
+	}
+
 }

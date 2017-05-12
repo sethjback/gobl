@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/sethjback/gobl/coordinator/gobldb"
+	"github.com/sethjback/gobl/gobldb"
 	"github.com/sethjback/gobl/model"
 )
 
@@ -78,6 +78,10 @@ func (d *SQLite) GetJob(id string) (*model.Job, error) {
 		if def.Agent, err = d.getAgent(agentID); err != nil {
 			return nil, err
 		}
+
+		def.Meta.Errors, _ = d.jobFilesCount(id, map[string]string{"state": model.StateFailed})
+		def.Meta.Complete, _ = d.jobFilesCount(id, map[string]string{"state": model.StateFinished})
+		def.Meta.Total, _ = d.jobFilesCount(id, nil)
 
 		return def, err
 	}

@@ -1,8 +1,10 @@
 # Exmpale Config
 
-[host]
-address = "127.0.0.1:8030" # IP:PORT to listen on
-privateKey = "./private.pem" # Private Key used to sign requests
+[Server]
+listen = "127.0.0.1:8030" # IP:PORT to listen on
+compres = true
+shutdown_wait = 20
+private_key = "./private.pem" # Private Key used to sign requests
 
 [db]
 dbpath = "./testdb" # Path to the DB file (sqlite at the moment)

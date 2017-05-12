@@ -3,107 +3,130 @@ package manager
 import (
 	"errors"
 	"fmt"
-	"net/url"
-	"strconv"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/sethjback/gobl/email"
-	"github.com/sethjback/gobl/spec"
+	"github.com/sethjback/gobl/httpapi"
+	"github.com/sethjback/gobl/model"
 )
 
 // JobStatus reads the status from the DB
-func JobStatus(id int) (*spec.Job, error) {
-	return gDb.GetJob(id)
-}
+func JobStatus(id string) (*model.JobMeta, error) {
+	var jobMeta *model.JobMeta
+	var rerr error
 
-// QueryJobs builds a list of jobs based on the given paramiters
-func QueryJobs(params url.Values) ([]*spec.Job, error) {
+	j, err := gDb.GetJob(id)
+	if err != nil {
+		return nil, err
+	}
 
-	validP := make(map[string]string)
+	if j.Meta.State == model.StateRunning || j.Meta.State == model.StateNotification {
+		aR := &httpapi.Request{Host: j.Agent.Address, Path: "/jobs/" + id, Method: "GET"}
+		response, err := aR.Send(signer)
+		if err != nil {
+			return nil, err
+		}
+		//todo: update status on our end if the job isn't found on the agent. Likely causes are the agent Shutdown
+		// uncleanly and wasn't able to persist the job
+		if response.Error != nil {
+			return nil, response.Error
+		}
 
-	for _, key := range []string{"agentid", "start", "end", "state", "limit", "offset"} {
-		val := params.Get(key)
-		if len(val) != 0 {
-			validP[key] = val
+		if jd, ok := response.Data[id]; ok {
+			jobMeta = jd.(*model.JobMeta)
+		} else {
+			rerr = errors.New("Unable to find job on agent")
 		}
 	}
 
-	// limit and offset should always be set
-	if _, ok := validP["limit"]; !ok {
-		validP["limit"] = "10"
+	return jobMeta, rerr
+}
+
+// JobList builds a list of jobs based on the given paramiters
+func JobList(filters map[string]string) ([]model.Job, error) {
+	list, err := gDb.GetJobs(filters)
+	if list == nil {
+		list = make([]model.Job, 0)
 	}
 
-	if _, ok := validP["offset"]; !ok {
-		validP["offset"] = "0"
-	}
-
-	return gDb.JobQuery(validP)
+	return list, err
 }
 
 // AddJobFile adds a file entry to the job
-func AddJobFile(jobID int, fileRequest *spec.JobFileRequest) error {
+func AddJobFile(jobID string, jobFile model.JobFile) error {
 	job, err := gDb.GetJob(jobID)
 	if err != nil {
 		return err
 	}
-	if job.State != spec.Running {
+	if job.Meta.State != model.StateRunning {
 		return errors.New("Cannot add files to completed job")
 	}
-	return gDb.AddJobFile(jobID, &fileRequest.File)
+
+	return gDb.SaveJobFile(jobID, jobFile)
 }
 
 // FinishJob updates the job status in the DB and begins the file indexing process
-func FinishJob(id int) error {
+func FinishJob(id string) error {
 	job, err := gDb.GetJob(id)
 	if err != nil {
 		return err
 	}
 
-	count, err := gDb.JobErrorCount(id)
-	if err != nil {
-		return err
-	}
+	job.Meta.State = model.StateFinished
+	job.Meta.End = time.Now()
 
-	if count > 0 {
-		job.State = spec.Errors
-		m := "Job finished with " + strconv.Itoa(count) + " error(s)"
-		job.Message = &m
-	} else {
-		job.State = spec.Complete
-	}
-
-	t := time.Now()
-
-	job.End = &t
-
-	err = gDb.UpdateJob(job)
-	if err != nil {
-		return err
-	}
+	gDb.SaveJob(*job)
 
 	// Todo: index table for files lookup
 
 	if conf.Email.Configured() {
-		a, _ := gDb.GetAgent(job.AgentID)
-		var msg string
-		if job.Message != nil {
-			msg = *job.Message
-		} else {
-			msg = ""
-		}
-		body := "Job Complete: " + strconv.Itoa(job.ID) + "\n"
-		body += "Agent: " + a.Name + "\n"
-		body += "Start: " + job.Start.String() + "\nEnd: " + job.End.String() + "\nDuration: " + fmt.Sprintf("%v", job.End.Sub(*job.Start)) + "\n"
-		body += "Message: " + msg + "\n\n"
+		body := "Job Complete: " + job.ID + "\n"
+		body += "Agent: " + job.Agent.Name + "\n"
+		body += "Start: " + job.Meta.Start.String() + "\nEnd: " + job.Meta.End.String() + "\nDuration: " + fmt.Sprintf("%v", job.Meta.End.Sub(job.Meta.Start)) + "\n"
+		body += "Message: " + job.Meta.Message + "\n\n"
 		body += "Job Definition: " + fmt.Sprintf("%+v", job.Definition)
 
-		email.SendEmail(conf.Email, body, "Job Report: "+strconv.Itoa(job.ID))
+		email.SendEmail(conf.Email, body, "Job Report: "+job.ID)
 	}
 
 	return nil
 }
 
 // JobFiles pulls a list of files in job
-func JobFiles(path string, jobID int) ([]*spec.JobFile, error) {
-	return gDb.JobFiles(path, jobID)
+func JobFiles(jobID string, filters map[string]string) ([]model.JobFile, error) {
+	_, err := gDb.GetJob(jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	return gDb.JobFiles(jobID, filters)
+}
+
+func NewJob(jobRequest model.Job) (string, error) {
+	jobRequest.ID = uuid.New().String()
+	jobRequest.Meta = &model.JobMeta{State: model.StateNew, Start: time.Now().UTC()}
+
+	err := gDb.SaveJob(jobRequest)
+	if err != nil {
+		return "", err
+	}
+
+	aR := &httpapi.Request{Host: jobRequest.Agent.Address, Path: "/jobs", Method: "POST"}
+	jobRequest.Agent = nil
+	err = aR.SetBody(jobRequest)
+	if err != nil {
+		return "", err
+	}
+
+	response, err := aR.Send(signer)
+	if err != nil {
+		return "", err
+	}
+
+	return jobRequest.ID, response.Error
+}
+
+func GetJob(jobID string) (*model.Job, error) {
+	return gDb.GetJob(jobID)
 }

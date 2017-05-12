@@ -1,31 +1,63 @@
 package manager
 
 import (
+	"github.com/google/uuid"
 	"github.com/robfig/cron"
-	"github.com/sethjback/gobl/spec"
+	"github.com/sethjback/gobl/model"
 	"github.com/sethjback/gobl/util/log"
 )
 
+// Implements
 type ScheduledJob struct {
-	Schedule *spec.Schedule `json:"schedule"`
+	Schedule model.Schedule `json:"schedule"`
 }
 
 func (s *ScheduledJob) Run() {
-	jobID, err := RunBackup(s.Schedule.Backup)
+	var err error
+	job := model.Job{}
+	job.Definition, err = gDb.GetJobDefinition(s.Schedule.JobDefinitionID)
 	if err != nil {
-		log.Errorf("scheduler", "Could not run scheduled Backup: %v. Error: ", *s, err)
+		log.Errorf("scheduler", "Could not job definition for schedule %+v. Error: %v", *s, err)
 	}
-	log.Infof("scheduler", "Scheduled Job started. ID: %v", jobID)
+
+	job.Agent, err = gDb.GetAgent(s.Schedule.AgentID)
+	if err != nil {
+		log.Errorf("scheduler", "Could not find agent for schedule %+v. Error: %v", *s, err)
+	}
+
+	job.ID, err = NewJob(job)
+
+	if err != nil {
+		log.Errorf("scheduler", "Could not run scheduled Backup: %v. Error: %v", *s, err)
+	}
+
+	log.Infof("scheduler", "Scheduled Job started. ID: %v", job.ID)
 }
 
-func AddSchedule(s *spec.Schedule) error {
+func NewSchedule(s model.Schedule) (string, error) {
+	s.ID = uuid.New().String()
 
+	_, err := cron.Parse(s.String())
+	if err != nil {
+		return "", err
+	}
+
+	if err = gDb.SaveSchedule(s); err != nil {
+		return "", err
+	}
+
+	schedules.Stop()
+	err = initCron()
+	return s.ID, err
+}
+
+func UpdateSchedule(s model.Schedule) error {
 	_, err := cron.Parse(s.String())
 	if err != nil {
 		return err
 	}
 
-	if err = gDb.AddSchedule(s); err != nil {
+	if err = gDb.SaveSchedule(s); err != nil {
 		return err
 	}
 
@@ -33,30 +65,12 @@ func AddSchedule(s *spec.Schedule) error {
 	return initCron()
 }
 
-func UpdateSchedule(s *spec.Schedule) error {
-	_, err := cron.Parse(s.String())
-	if err != nil {
-		return err
-	}
-
-	if err = gDb.UpdateSchedule(s); err != nil {
-		return err
-	}
-
-	schedules.Stop()
-	return initCron()
-}
-
-func DeleteSchedule(id int) error {
+func DeleteSchedule(id string) error {
 	return gDb.DeleteSchedule(id)
 }
 
-func ScheduleList() ([]*spec.Schedule, error) {
+func ScheduleList() ([]model.Schedule, error) {
 	return gDb.ScheduleList()
-}
-
-func GetSchedule(id int) (*spec.Schedule, error) {
-	return gDb.GetSchedule(id)
 }
 
 func CronSchedules() []*cron.Entry {

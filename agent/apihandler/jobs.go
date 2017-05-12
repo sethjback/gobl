@@ -13,29 +13,19 @@ func jobList(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
 	return httpapi.Response{Data: jobs, HTTPCode: 200}
 }
 
-func newRestoreJob(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
+func newJob(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
 	var job model.Job
 	err := r.JsonBody(&job)
 	if err != nil {
 		return httpapi.Response{Error: err, HTTPCode: 400}
 	}
 
-	err = manager.NewRestore(job)
-	if err != nil {
-		return httpapi.Response{Error: err, HTTPCode: 400}
+	if job.Definition.Type == model.TypeBackup {
+		err = manager.NewBackup(job)
+	} else {
+		err = manager.NewRestore(job)
 	}
 
-	return httpapi.Response{HTTPCode: 201}
-}
-
-func newBackupJob(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
-	var job model.Job
-	err := r.JsonBody(&job)
-	if err != nil {
-		return httpapi.Response{Error: err, HTTPCode: 400}
-	}
-
-	err = manager.NewBackup(job)
 	if err != nil {
 		return httpapi.Response{Error: err, HTTPCode: 400}
 	}
@@ -59,6 +49,7 @@ func jobStatus(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
 
 	jobStatus, err := manager.JobStatus(id)
 	if err != nil {
+		//TODO: need to return 404 if not found
 		return httpapi.Response{Error: err, HTTPCode: 400}
 	}
 

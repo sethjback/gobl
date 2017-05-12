@@ -9,6 +9,20 @@ import (
 	"github.com/sethjback/gobl/modification"
 )
 
+const (
+	StateNew          = "new"
+	StateConfigured   = "configured"
+	StateRunning      = "running"
+	StateCanceling    = "canceling"
+	StateNotification = "notifications"
+	StateFinished     = "finished"
+	StateFailed       = "failed"
+	StateCanceled     = "canceled"
+
+	TypeBackup  = "backup"
+	TypeRestore = "restore"
+)
+
 type Job struct {
 	ID         string         `json:"id"`
 	Agent      *Agent         `json:"agent,omitempty"`
@@ -18,6 +32,7 @@ type Job struct {
 
 type JobDefinition struct {
 	ID            string                    `json:"id,omitempty"`
+	Type          string                    `json:"type"`
 	To            []engine.Definition       `json:"to"`
 	From          *engine.Definition        `json:"from,omitempty"`
 	Modifications []modification.Definition `json:"modifications"`
@@ -29,10 +44,9 @@ type JobMeta struct {
 	State    string    `json:"state"`
 	Start    time.Time `json:"start"`
 	End      time.Time `json:"end"`
-	Duration float64   `json:"duration"`
+	Message  string    `json:"message"`
 	Total    int       `json:"total"`
 	Complete int       `json:"complete"`
-	Skipped  int       `json:"skipped"`
 	Errors   int       `json:"errors"`
 }
 

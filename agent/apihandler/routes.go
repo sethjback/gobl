@@ -19,13 +19,8 @@ var Routes = []httpapi.Route{
 	// Jobs
 	httpapi.Route{
 		Method:  "POST",
-		Path:    "/backups",
-		Handler: newBackupJob,
-	},
-	httpapi.Route{
-		Method:  "POST",
-		Path:    "/restores",
-		Handler: newRestoreJob,
+		Path:    "/jobs",
+		Handler: newJob,
 	},
 	httpapi.Route{
 		Method:  "GET",

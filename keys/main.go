@@ -2,7 +2,6 @@ package keys
 
 import (
 	"crypto"
-	"crypto/rand"
 	"crypto/rsa"
 	"crypto/sha256"
 	"crypto/x509"
@@ -11,12 +10,6 @@ import (
 	"errors"
 	"io/ioutil"
 )
-
-// Manager handles storing the instances' key
-type Manager struct {
-	PrivateKey *rsa.PrivateKey
-	PublicKeys map[string]*rsa.PublicKey
-}
 
 // OpenPrivateKey reads a pem encode private key from disk
 func OpenPrivateKey(path string) (*rsa.PrivateKey, error) {
@@ -70,35 +63,12 @@ func parsePublicKeyBytes(b []byte) (*rsa.PublicKey, error) {
 
 // PublicKey exports the public key (DER) as a base64.URLEncoded string
 func PublicKey(pk *rsa.PrivateKey) (string, error) {
-	pubASN1, err := x509.MarshalPKIXPublicKey(pk.PublicKey)
+	pubASN1, err := x509.MarshalPKIXPublicKey(&pk.PublicKey)
 	if err != nil {
 		return "", err
 	}
 
 	return base64.URLEncoding.EncodeToString(pubASN1), nil
-}
-
-// Sign uses the private key to sign provided string and returns the result as a base64.URLEncoded string
-func (m *Manager) Sign(s string) (string, error) {
-	h := sha256.New()
-	h.Write([]byte(s))
-	d := h.Sum(nil)
-	sig, err := rsa.SignPSS(rand.Reader, m.PrivateKey, crypto.SHA256, d, nil)
-	if err != nil {
-		return "", err
-	}
-
-	return base64.URLEncoding.EncodeToString(sig), nil
-}
-
-// KeyForHost gets a publick key for the given host
-func (m *Manager) KeyForHost(host string) (*rsa.PublicKey, error) {
-	key, ok := m.PublicKeys[host]
-	if !ok {
-		return nil, errors.New("Could not find the key for that host")
-	}
-
-	return key, nil
 }
 
 // VerifySignature validates the signature string
@@ -112,11 +82,5 @@ func VerifySignature(key *rsa.PublicKey, signed []byte, signature string) error 
 	h.Write(signed)
 	d := h.Sum(nil)
 
-	err = rsa.VerifyPSS(key, crypto.SHA256, d, dec, nil)
-
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return rsa.VerifyPSS(key, crypto.SHA256, d, dec, nil)
 }

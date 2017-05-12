@@ -2,141 +2,124 @@ package apihandler
 
 import "github.com/sethjback/gobl/httpapi"
 
-// Routes are teh agent's routes
-var Routes = httpapi.Routes{
+// Routes are the agent's routes
+var Routes = []httpapi.Route{
 	httpapi.Route{
-		"Status",
-		"GET",
-		"/status",
-		coordinatorStatus},
+		Method:  "GET",
+		Path:    "/status",
+		Handler: coordinatorStatus},
+
 	//
 	//AGENTS
 	//
+
 	httpapi.Route{
-		"Agents",
-		"GET",
-		"/agents",
-		agentList},
+		Method:  "GET",
+		Path:    "/agents",
+		Handler: agentList},
+
 	httpapi.Route{
-		"AddAgent",
-		"POST",
-		"/agents",
-		addAgent},
+		Method:  "POST",
+		Path:    "/agents",
+		Handler: addAgent},
+
 	httpapi.Route{
-		"GetAgent",
-		"GET",
-		"/agents/{agentID}",
-		getAgent},
+		Method:  "GET",
+		Path:    "/agents/:id",
+		Handler: getAgent},
+
 	httpapi.Route{
-		"UpdateAgent",
-		"PUT",
-		"/agents/{agentID}",
-		updateAgent},
-	//
-	//BACKUPS
-	//
+		Method:  "GET",
+		Path:    "/agents/:id/status",
+		Handler: agentStatus},
+
 	httpapi.Route{
-		"CreateBackup",
-		"POST",
-		"/backups",
-		addBackup},
-	httpapi.Route{
-		"ModifyBackup",
-		"PUT",
-		"/backups/{backupID}",
-		modifyBackup},
-	httpapi.Route{
-		"GetBackup",
-		"GET",
-		"/backups/{backupID}",
-		getBackup},
-	httpapi.Route{
-		"DeleteBackup",
-		"DELETE",
-		"/backups/{backupID}",
-		deleteBackup},
-	httpapi.Route{
-		"RunBackup",
-		"POST",
-		"/backups/{backupID}",
-		runBackup},
-	httpapi.Route{
-		"BackupList",
-		"GET",
-		"/backups",
-		listBackups},
-	//
-	// Restores
-	//
-	httpapi.Route{
-		"RunRestore",
-		"POST",
-		"/restores",
-		restore},
+		Method:  "PUT",
+		Path:    "/agents/:id",
+		Handler: updateAgent},
+
 	//
 	//JOBS
 	//
+
 	httpapi.Route{
-		"JobStatus",
-		"GET",
-		"/jobs/{jobID}",
-		jobStatus},
+		Method:  "GET",
+		Path:    "/jobs/:id",
+		Handler: jobStatus},
+
 	httpapi.Route{
-		"AddJobFile",
-		"POST",
-		"/jobs/{jobID}/files",
-		addJobFile},
+		Method:  "POST",
+		Path:    "/jobs/:id/files",
+		Handler: addJobFile},
+
 	httpapi.Route{
-		"FinishJob",
-		"POST",
-		"/jobs/{jobID}/complete",
-		finishJob},
+		Method:  "POST",
+		Path:    "/jobs/:id/complete",
+		Handler: finishJob},
+
 	httpapi.Route{
-		"JobQuery",
-		"GET",
-		"/jobs",
-		jobQuery},
+		Method:  "GET",
+		Path:    "/jobs",
+		Handler: jobList},
+
 	httpapi.Route{
-		"JobFiles",
-		"GET",
-		"/jobs/{jobID}/files",
-		jobFiles},
+		Method:  "GET",
+		Path:    "/jobs/:id/files",
+		Handler: jobFiles},
+
+	//
+	// JOB DEFINITIONS
+	//
+	httpapi.Route{
+		Method:  "GET",
+		Path:    "/job-definitions",
+		Handler: jobDefinitionList},
+
+	httpapi.Route{
+		Method:  "GET",
+		Path:    "/job-definitions/:id",
+		Handler: getJobDefinition},
+
+	httpapi.Route{
+		Method:  "DELETE",
+		Path:    "/job-definitions/:id",
+		Handler: deleteJobDefinition},
+
+	httpapi.Route{
+		Method:  "PUT",
+		Path:    "/job-definitions/:id",
+		Handler: updateJobDefinition},
+
+	httpapi.Route{
+		Method:  "POST",
+		Path:    "/job-definitions",
+		Handler: createJobDefinition},
 
 	//
 	// SCHEDULES
 	//
 	httpapi.Route{
-		"ScheduleList",
-		"GET",
-		"/schedules",
-		scheduleList},
+		Method:  "GET",
+		Path:    "/schedules",
+		Handler: scheduleList},
+
 	httpapi.Route{
-		"AddSchedule",
-		"POST",
-		"/schedules",
-		addSchedule},
+		Method:  "POST",
+		Path:    "/schedules",
+		Handler: addSchedule},
+
 	httpapi.Route{
-		"GetSchedule",
-		"GET",
-		"/schedules/{sID}",
-		getSchedule},
+		Method:  "DELETE",
+		Path:    "/schedules/{sID}",
+		Handler: deleteSchedule},
+
 	httpapi.Route{
-		"DeleteSchedule",
-		"DELETE",
-		"/schedules/{sID}",
-		deleteSchedule},
+		Method:  "PUT",
+		Path:    "/schedules/{sID}",
+		Handler: updateSchedule},
+
 	httpapi.Route{
-		"UpdateSchedule",
-		"PUT",
-		"/schedules/{sID}",
-		updateSchedule},
-	httpapi.Route{
-		"email",
-		"POST",
-		"/email",
-		testEmail},
-	httpapi.Route{
-		"GC",
-		"POST",
-		"/gc",
-		gc}}
+		Method:  "POST",
+		Path:    "/email",
+		Handler: testEmail},
+}
