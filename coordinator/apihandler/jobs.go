@@ -47,6 +47,20 @@ func jobFiles(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
 	return httpapi.Response{Data: map[string]interface{}{"files": files}, HTTPCode: 200}
 }
 
+func jobDirectories(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
+	id, err := uuid.Parse(ps.ByName("id"))
+	if err != nil {
+		return httpapi.Response{Error: errors.New("Invalid job id"), HTTPCode: 400}
+	}
+
+	dirs, err := manager.JobDirectories(id.String(), r.Query.Get("parent"))
+	if err != nil {
+		return httpapi.Response{Error: err, HTTPCode: 400}
+	}
+
+	return httpapi.Response{Data: map[string]interface{}{"directories": dirs}, HTTPCode: 200}
+}
+
 func cancelJob(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
 	return httpapi.Response{Error: errors.New("Unimplemented"), HTTPCode: 400}
 }

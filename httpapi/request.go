@@ -106,17 +106,17 @@ func (r *Request) SetBody(body interface{}) error {
 
 func (r *Request) JsonBody(decodeTo interface{}) goblerr.Error {
 	if cType := r.Headers.Get("Content-Type"); cType != "application/json" {
-		return goblerr.New("Body must be valid json", ErrorRequestBodyInvalid, "request", "Content-Type must be application/json")
+		return goblerr.New("Body must be valid json", ErrorRequestBodyInvalid, "Content-Type must be application/json")
 	}
 
 	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
-		return goblerr.New("Body not valid json", ErrorRequestBodyInvalid, "request", "read body failed")
+		return goblerr.New("Body not valid json", ErrorRequestBodyInvalid, "read body failed")
 	}
 
 	if err = json.Unmarshal(b, decodeTo); err != nil {
 		log.Debug(err.Error())
-		return goblerr.New("Body not valid json", ErrorRequestBodyInvalid, "request", "json unmarshal failed")
+		return goblerr.New("Body not valid json", ErrorRequestBodyInvalid, "json unmarshal failed")
 	}
 
 	return nil
@@ -165,7 +165,7 @@ func queryString(values url.Values) string {
 func (r *Request) Send(s keys.Signer) (*Response, goblerr.Error) {
 	err := prepAndSign(r, s)
 	if err != nil {
-		return nil, goblerr.New("Unable to sign message", ErrorRequestFailed, "request", err)
+		return nil, goblerr.New("Unable to sign message", ErrorRequestFailed, err)
 	}
 	switch r.Method {
 	case "POST":
@@ -173,7 +173,7 @@ func (r *Request) Send(s keys.Signer) (*Response, goblerr.Error) {
 	case "GET":
 		return get(r)
 	}
-	return nil, goblerr.New("Invalid method", ErrorRequestInvalid, "request", "must be POST or GET")
+	return nil, goblerr.New("Invalid method", ErrorRequestInvalid, "must be POST or GET")
 }
 
 func prepAndSign(r *Request, s keys.Signer) error {
@@ -196,7 +196,7 @@ func prepAndSign(r *Request, s keys.Signer) error {
 func post(r *Request) (*Response, goblerr.Error) {
 	req, err := http.NewRequest("POST", r.Host+r.Path, r.Body)
 	if err != nil {
-		return nil, goblerr.New("Invalid request", ErrorRequestInvalid, "request", err)
+		return nil, goblerr.New("Invalid request", ErrorRequestInvalid, err)
 	}
 
 	req.Header = r.Headers
@@ -211,12 +211,12 @@ func post(r *Request) (*Response, goblerr.Error) {
 
 	resp, err := r.Client.Do(req)
 	if err != nil {
-		return nil, goblerr.New("Unable to send request", ErrorRequestFailed, "request", err)
+		return nil, goblerr.New("Unable to send request", ErrorRequestFailed, err)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, goblerr.New("Unable to read response", ErrorRequestFailed, "request", err)
+		return nil, goblerr.New("Unable to read response", ErrorRequestFailed, err)
 	}
 
 	resp.Body.Close()
@@ -224,7 +224,7 @@ func post(r *Request) (*Response, goblerr.Error) {
 	var response Response
 	err = json.Unmarshal(body, &response)
 	if err != nil {
-		return nil, goblerr.New("Unable to unmarshal", ErrorRequestFailed, "request", err)
+		return nil, goblerr.New("Unable to unmarshal", ErrorRequestFailed, err)
 	}
 	response.HTTPCode = resp.StatusCode
 
@@ -235,7 +235,7 @@ func post(r *Request) (*Response, goblerr.Error) {
 func get(r *Request) (*Response, goblerr.Error) {
 	req, err := http.NewRequest("GET", r.Host+r.Path, nil)
 	if err != nil {
-		return nil, goblerr.New("Invalid request", ErrorRequestInvalid, "request", err)
+		return nil, goblerr.New("Invalid request", ErrorRequestInvalid, err)
 	}
 
 	req.Header = r.Headers
@@ -249,12 +249,12 @@ func get(r *Request) (*Response, goblerr.Error) {
 
 	resp, err := r.Client.Do(req)
 	if err != nil {
-		return nil, goblerr.New("Unable to send request", ErrorRequestFailed, "request", err)
+		return nil, goblerr.New("Unable to send request", ErrorRequestFailed, err)
 	}
 
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return nil, goblerr.New("Unable to read response", ErrorRequestFailed, "request", err)
+		return nil, goblerr.New("Unable to read response", ErrorRequestFailed, err)
 	}
 
 	resp.Body.Close()
@@ -262,7 +262,7 @@ func get(r *Request) (*Response, goblerr.Error) {
 	var response Response
 	err = json.Unmarshal(body, &response)
 	if err != nil {
-		return nil, goblerr.New("Unable to unmarshal", ErrorRequestFailed, "request", err)
+		return nil, goblerr.New("Unable to unmarshal", ErrorRequestFailed, err)
 	}
 	response.HTTPCode = resp.StatusCode
 

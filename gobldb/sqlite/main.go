@@ -47,6 +47,10 @@ func (d *SQLite) Init(options config.DB) error {
 	if err != nil {
 		return err
 	}
+	_, err = d.Connection.Exec(createFileDirTable, "")
+	if err != nil {
+		return err
+	}
 
 	_, err = d.Connection.Exec(createSchedulesTable, "")
 

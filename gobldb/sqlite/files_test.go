@@ -147,4 +147,58 @@ func TestFiles(t *testing.T) {
 		assert.Equal(8, jfc)
 	}
 
+	f.File.Path = "/dir1.2/dir2/dir3.2/file2.jpg"
+	f.State = "success"
+	err = s.SaveJobFile(jobID, f)
+	if !assert.Nil(err) {
+		return
+	}
+
+	f.File.Path = "/dir1.2/dir2.2/dir3.2/file2.jpg"
+	f.State = "success"
+	err = s.SaveJobFile(jobID, f)
+	if !assert.Nil(err) {
+		return
+	}
+	f.File.Path = "/dir1.2/dir2.3/dir3.1/file2.jpg"
+	f.State = "success"
+	err = s.SaveJobFile(jobID, f)
+	if !assert.Nil(err) {
+		return
+	}
+	f.File.Path = "/dir1.2/dir2.3/dir3.2/file2.jpg"
+	f.State = "success"
+	err = s.SaveJobFile(jobID, f)
+	if !assert.Nil(err) {
+		return
+	}
+
+	dirs, err := s.JobDirectories(jobID, "/dir1.2")
+	if assert.Nil(err) {
+		assert.Len(dirs, 3)
+		assert.Contains(dirs, "dir2")
+		assert.Contains(dirs, "dir2.2")
+		assert.Contains(dirs, "dir2.3")
+	}
+
+	dirs, err = s.JobDirectories(jobID, "/dir1.2/dir2")
+	if assert.Nil(err) {
+		assert.Len(dirs, 1)
+		assert.Contains(dirs, "dir3.2")
+	}
+
+	dirs, err = s.JobDirectories(jobID, "/dir1.2/dir2.3")
+	if assert.Nil(err) {
+		assert.Len(dirs, 2)
+		assert.Contains(dirs, "dir3.1")
+		assert.Contains(dirs, "dir3.2")
+	}
+
+	dirs, err = s.JobDirectories(jobID, "/")
+	if assert.Nil(err) {
+		assert.Len(dirs, 2)
+		assert.Contains(dirs, "dir1")
+		assert.Contains(dirs, "dir1.2")
+	}
+
 }

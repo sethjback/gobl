@@ -103,6 +103,19 @@ func JobFiles(jobID string, filters map[string]string) ([]model.JobFile, error) 
 	return gDb.JobFiles(jobID, filters)
 }
 
+func JobDirectories(jobID, parent string) ([]string, error) {
+	_, err := gDb.GetJob(jobID)
+	if err != nil {
+		return nil, err
+	}
+
+	if parent == "" {
+		parent = "/"
+	}
+
+	return gDb.JobDirectories(jobID, parent)
+}
+
 func NewJob(jobRequest model.Job) (string, error) {
 	jobRequest.ID = uuid.New().String()
 	jobRequest.Meta = &model.JobMeta{State: model.StateNew, Start: time.Now().UTC()}

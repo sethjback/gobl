@@ -19,10 +19,35 @@ func (d *SQLite) SaveJobFile(jobID string, f model.JobFile) error {
 			return err
 		}
 
-		return d.insertFile(jobID, f)
+		err = d.insertFile(jobID, f)
+		if err == nil {
+			err = d.insertFileDir(jobID, f.File.Path)
+		}
+		return err
 	}
 
 	return d.updatefile(jobfile.id, f)
+}
+
+func (d *SQLite) insertFileDir(jobID, path string) error {
+	split := strings.Split(path, "/")
+
+	for i, v := range split[1:] {
+		var parent string
+		if i == 0 {
+			parent = "/"
+		} else {
+			parent = strings.Join(split[:i+1], "/")
+		}
+		_, err := d.Connection.Exec("INSERT INTO "+fileDirTable+" (job, name, parent) values(?,?,?)",
+			jobID, v, parent)
+
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 func (d *SQLite) insertFile(jobID string, jf model.JobFile) error {
@@ -238,11 +263,9 @@ func (d *SQLite) jobFilesCount(jobID string, filters map[string]string) (int, er
 }
 
 func (d *SQLite) JobDirectories(jobID, parent string) ([]string, error) {
-	split := strings.Split(parent, "/")
-
 	rows, err := d.Connection.Query(
-		"SELECT DISTINCT parent from "+filesTable+" WHERE job=? AND level=?",
-		jobID, len(split)-1,
+		"SELECT DISTINCT name from "+fileDirTable+" WHERE job=? AND parent=?",
+		jobID, parent,
 	)
 	if err != nil {
 		return nil, err
