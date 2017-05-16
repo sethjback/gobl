@@ -36,7 +36,7 @@ func NewBackupEngine(file files.File, savers ...Saver) (Engine, bool, error) {
 	for i := 0; i < len(e.savers); i++ {
 		ok, err := e.savers[i].ShouldSave(file)
 		if err != nil {
-			return nil, false, goblerr.New("Saver error on file check", ErrorFileCheck, "engines", e.savers[i].Name()+" errored on ShouldBackup for "+file.Path)
+			return nil, false, goblerr.New("Saver error on file check", ErrorFileCheck, e.savers[i].Name()+" errored on ShouldBackup for "+file.Path)
 		}
 		if ok {
 			r, w := io.Pipe()
@@ -87,7 +87,7 @@ func NewRestoreEngine(file files.File, to ...Restorer) (Engine, error) {
 	for i := 0; i < len(e.to); i++ {
 		ok, err := e.to[i].ShouldRestore(file)
 		if err != nil {
-			return nil, goblerr.New("Restorer error on file check", ErrorFileCheck, "engines", e.to[i].Name()+" errored on ShouldRestore for "+file.Path)
+			return nil, goblerr.New("Restorer error on file check", ErrorFileCheck, e.to[i].Name()+" errored on ShouldRestore for "+file.Path)
 		}
 		if ok {
 			r, w := io.Pipe()

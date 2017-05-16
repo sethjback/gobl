@@ -52,7 +52,7 @@ func TestFiles(t *testing.T) {
 	}
 
 	f.State = "failed"
-	f.Error = goblerr.New("Device busy", "WriteFileFailed", "Agent", nil)
+	f.Error = goblerr.New("Device busy", "WriteFileFailed", nil)
 	err = s.SaveJobFile(jobID, f)
 	assert.Nil(err)
 
@@ -92,7 +92,7 @@ func TestFiles(t *testing.T) {
 
 	f.File.Path = "/dir1/dir2/dir3.3/file1.jpg"
 	f.State = "failed"
-	f.Error = goblerr.New("Device busy", "WriteFileFailed", "Agent", nil)
+	f.Error = goblerr.New("Device busy", "WriteFileFailed", nil)
 	err = s.SaveJobFile(jobID, f)
 	if !assert.Nil(err) {
 		return
@@ -106,7 +106,7 @@ func TestFiles(t *testing.T) {
 	}
 	f.File.Path = "/dir1/dir2/dir3.3/file3.jpg"
 	f.State = "failed"
-	f.Error = goblerr.New("Device busy", "WriteFileFailed", "Agent", nil)
+	f.Error = goblerr.New("Device busy", "WriteFileFailed", nil)
 	err = s.SaveJobFile(jobID, f)
 	if !assert.Nil(err) {
 		return

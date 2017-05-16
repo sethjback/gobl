@@ -92,7 +92,7 @@ func Build(m []Definition, direction int) ([]Modifyer, error) {
 			mods = append(mods, compress)
 
 		default:
-			return nil, goblerr.New("Invalid modifyer", ErrorUnrecognizedModifyer, "modifications", "I don't understand modifyer type: "+modType.Name)
+			return nil, goblerr.New("Invalid modifyer", ErrorUnrecognizedModifyer, "I don't understand modifyer type: "+modType.Name)
 		}
 
 	}

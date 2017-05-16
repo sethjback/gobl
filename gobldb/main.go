@@ -37,4 +37,10 @@ type Database interface {
 	SaveSchedule(model.Schedule) error
 	DeleteSchedule(id string) error
 	ScheduleList() ([]model.Schedule, error)
+
+	// USERS
+	GetUser(email string) (*model.User, error)
+	UserList() ([]model.User, error)
+	SaveUser(user model.User) error
+	DeleteUser(email string) error
 }

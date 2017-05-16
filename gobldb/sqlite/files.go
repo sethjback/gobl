@@ -107,7 +107,7 @@ func (d *SQLite) getFile(jobID, parent, filename string) (*jobFile, error) {
 			level: level,
 		}
 		if len(er) != 0 {
-			def.err = goblerr.New("", "", "", nil)
+			def.err = goblerr.New("", "", nil)
 			err = json.Unmarshal(er, def.err)
 			if err != nil {
 				return nil, errors.New("Trouble unmarshalling error")
@@ -176,7 +176,7 @@ func (d *SQLite) JobFiles(jobID string, filters map[string]string) ([]model.JobF
 		def := model.JobFile{State: state}
 
 		if len(err) != 0 {
-			def.Error = goblerr.New("", "", "", nil)
+			def.Error = goblerr.New("", "", nil)
 			e = json.Unmarshal(err, &def.Error)
 			if e != nil {
 				return nil, errors.New("unable to unmarshal error (" + e.Error() + ")")
