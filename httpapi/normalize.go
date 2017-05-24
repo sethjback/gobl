@@ -80,7 +80,7 @@ func (n Normalize) ServeHTTP(rw http.ResponseWriter, r *http.Request, next http.
 	next(rw, r.WithContext(context.WithValue(ctx, request, req)))
 }
 
-func validateTimestamp(timestamp string) (int, goblerr.Error) {
+func validateTimestamp(timestamp string) (int, error) {
 	if timestamp == "" {
 		return -1, goblerr.New("Date header not set", ErrorDateRequired, "you must provide the x-gobl-date header in every request")
 	}

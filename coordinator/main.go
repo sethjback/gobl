@@ -9,7 +9,7 @@ import (
 	"github.com/sethjback/gobl/config"
 	"github.com/sethjback/gobl/coordinator/apihandler"
 	"github.com/sethjback/gobl/coordinator/manager"
-	"github.com/sethjback/gobl/gobldb/sqlite"
+	"github.com/sethjback/gobl/gobldb/leveldb"
 	"github.com/sethjback/gobl/httpapi"
 	"github.com/sethjback/gobl/model"
 	"github.com/sethjback/gobl/util/log"
@@ -35,8 +35,7 @@ func main() {
 	log.Debug("main", "config:", *conf)
 
 	if admin != "" {
-		gDb := &sqlite.SQLite{}
-		err := gDb.Init(conf.DB)
+		gDb, err := leveldb.New(conf.DB)
 		if err != nil {
 			log.Fatalf("main", "Error creating admin user: %v", err)
 		}

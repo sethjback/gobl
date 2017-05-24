@@ -1,4 +1,4 @@
-package sqlite
+package leveldb
 
 import (
 	"testing"
@@ -39,11 +39,6 @@ func TestUsers(t *testing.T) {
 	u1, err = s.GetUser(u.Email)
 	assert.Nil(err)
 	assert.Equal(u, *u1)
-
-	u.Email = ""
-	err = s.SaveUser(u)
-	assert.NotNil(err)
-	u.Email = "test@testing.com"
 
 	err = s.SaveUser(u2)
 	assert.Nil(err)

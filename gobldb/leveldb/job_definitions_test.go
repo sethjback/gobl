@@ -1,4 +1,4 @@
-package sqlite
+package leveldb
 
 import (
 	"testing"
@@ -7,6 +7,8 @@ import (
 	"github.com/sethjback/gobl/config"
 	"github.com/sethjback/gobl/engine"
 	"github.com/sethjback/gobl/files"
+	"github.com/sethjback/gobl/gobldb/errors"
+	"github.com/sethjback/gobl/goblerr"
 	"github.com/sethjback/gobl/model"
 	"github.com/sethjback/gobl/modification"
 	"github.com/sethjback/gobl/util/log"
@@ -86,7 +88,8 @@ func TestJobDefinitions(t *testing.T) {
 	jd1, err = s.GetJobDefinition(jd.ID)
 	assert.Nil(jd1)
 	if assert.NotNil(err) {
-		assert.Equal("No job definition with that ID", err.Error())
+		gerr, _ := err.(*goblerr.Error)
+		assert.Equal(errors.ErrCodeNotFound, gerr.Code)
 	}
 
 	err = s.SaveJobDefinition(jd)
@@ -146,7 +149,7 @@ func TestJobDefinitions(t *testing.T) {
 		return
 	}
 
-	jds, err := s.GetJobDefinitions()
+	jds, err := s.JobDefinitionList()
 	assert.Nil(err)
 	if assert.Len(jds, 3) {
 		assert.Contains(jds, jd)

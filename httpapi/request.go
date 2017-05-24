@@ -104,7 +104,7 @@ func (r *Request) SetBody(body interface{}) error {
 	return nil
 }
 
-func (r *Request) JsonBody(decodeTo interface{}) goblerr.Error {
+func (r *Request) JsonBody(decodeTo interface{}) error {
 	if cType := r.Headers.Get("Content-Type"); cType != "application/json" {
 		return goblerr.New("Body must be valid json", ErrorRequestBodyInvalid, "Content-Type must be application/json")
 	}
@@ -162,7 +162,7 @@ func queryString(values url.Values) string {
 	return buff.String()
 }
 
-func (r *Request) Send(s keys.Signer) (*Response, goblerr.Error) {
+func (r *Request) Send(s keys.Signer) (*Response, error) {
 	err := prepAndSign(r, s)
 	if err != nil {
 		return nil, goblerr.New("Unable to sign message", ErrorRequestFailed, err)
@@ -193,7 +193,7 @@ func prepAndSign(r *Request, s keys.Signer) error {
 }
 
 // Post a request
-func post(r *Request) (*Response, goblerr.Error) {
+func post(r *Request) (*Response, error) {
 	req, err := http.NewRequest("POST", r.Host+r.Path, r.Body)
 	if err != nil {
 		return nil, goblerr.New("Invalid request", ErrorRequestInvalid, err)
@@ -222,17 +222,21 @@ func post(r *Request) (*Response, goblerr.Error) {
 	resp.Body.Close()
 
 	var response Response
-	err = json.Unmarshal(body, &response)
-	if err != nil {
-		return nil, goblerr.New("Unable to unmarshal", ErrorRequestFailed, err)
+
+	if len(body) != 0 {
+		err = json.Unmarshal(body, &response)
+		if err != nil {
+			return nil, goblerr.New("Unable to unmarshal", ErrorRequestFailed, err)
+		}
 	}
+
 	response.HTTPCode = resp.StatusCode
 
 	return &response, nil
 }
 
 // Get a request
-func get(r *Request) (*Response, goblerr.Error) {
+func get(r *Request) (*Response, error) {
 	req, err := http.NewRequest("GET", r.Host+r.Path, nil)
 	if err != nil {
 		return nil, goblerr.New("Invalid request", ErrorRequestInvalid, err)

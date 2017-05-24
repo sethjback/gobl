@@ -54,7 +54,7 @@ func NewToken(secret []byte, validFor int) *Token {
 		Claims:   &Claims{}}
 }
 
-func (t *Token) Generate() (string, goblerr.Error) {
+func (t *Token) Generate() (string, error) {
 	h, err := encodePart(t.header)
 	if err != nil {
 		return "", err
@@ -78,7 +78,7 @@ func (t *Token) Generate() (string, goblerr.Error) {
 }
 
 // Parse takes a token string and validates it
-func (t *Token) Parse(in string) goblerr.Error {
+func (t *Token) Parse(in string) error {
 	split := strings.Split(in, ".")
 	if len(split) != 3 {
 		return goblerr.New("Token invalid", ErrorJWTTokenFormat, nil)
@@ -123,7 +123,7 @@ func base64Encode(b []byte) []byte {
 	return buf
 }
 
-func base64Decode(b []byte) ([]byte, goblerr.Error) {
+func base64Decode(b []byte) ([]byte, error) {
 	buf := make([]byte, base64.RawURLEncoding.DecodedLen(len(b)))
 	n, err := base64.RawURLEncoding.Decode(buf, b)
 	if err != nil {
@@ -132,7 +132,7 @@ func base64Decode(b []byte) ([]byte, goblerr.Error) {
 	return buf[:n], nil
 }
 
-func encodePart(p interface{}) ([]byte, goblerr.Error) {
+func encodePart(p interface{}) ([]byte, error) {
 	JSON, err := json.Marshal(p)
 	if err != nil {
 		return nil, goblerr.New("Could not json encode token part", ErrorJSONEncode, err)
@@ -140,7 +140,7 @@ func encodePart(p interface{}) ([]byte, goblerr.Error) {
 	return base64Encode(JSON), nil
 }
 
-func decodeHeader(raw []byte) (*header, goblerr.Error) {
+func decodeHeader(raw []byte) (*header, error) {
 	s, err := base64Decode(raw)
 	if err != nil {
 		return nil, goblerr.New("Invalidly encoded header", ErrorJWTHeaderDecode, err)
@@ -155,7 +155,7 @@ func decodeHeader(raw []byte) (*header, goblerr.Error) {
 	return &h, nil
 }
 
-func decodeClaims(raw []byte) (*Claims, goblerr.Error) {
+func decodeClaims(raw []byte) (*Claims, error) {
 	s, err := base64Decode(raw)
 	if err != nil {
 		return nil, goblerr.New("Invalidly encoded claims", ErrorJWTClaimsDecode, err)

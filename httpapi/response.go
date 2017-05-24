@@ -8,7 +8,7 @@ import (
 // Response is the standardized response format sent from the API
 type Response struct {
 	// Data is API payload
-	Data map[string]interface{} `json:"data"`
+	Data map[string]interface{} `json:"data,omitempty"`
 
 	// Error holds any errors that were encountered processing the request
 	Error error `json:"-"`
@@ -25,7 +25,7 @@ func (r *Response) Write(rw http.ResponseWriter) {
 	var jErr error
 	if r.Error != nil {
 		j, jErr = json.Marshal(map[string]string{"error": r.Error.Error()})
-	} else {
+	} else if r.Data != nil {
 		j, jErr = json.Marshal(r)
 	}
 	if jErr != nil {
@@ -34,7 +34,9 @@ func (r *Response) Write(rw http.ResponseWriter) {
 	}
 
 	rw.WriteHeader(r.HTTPCode)
-	rw.Write(j)
+	if len(j) != 0 {
+		rw.Write(j)
+	}
 }
 
 func setHeaders(w http.ResponseWriter) {

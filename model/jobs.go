@@ -5,7 +5,6 @@ import (
 
 	"github.com/sethjback/gobl/engine"
 	"github.com/sethjback/gobl/files"
-	"github.com/sethjback/gobl/goblerr"
 	"github.com/sethjback/gobl/modification"
 )
 
@@ -51,9 +50,9 @@ type JobMeta struct {
 }
 
 type JobFile struct {
-	File  files.File    `json:"file"`
-	State string        `json:"state"`
-	Error goblerr.Error `json:"error,omitempty"`
+	File  files.File `json:"file"`
+	State string     `json:"state"`
+	Error string     `json:"error,omitempty"`
 }
 
 type Path struct {

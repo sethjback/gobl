@@ -8,6 +8,12 @@ import (
 	"github.com/sethjback/gobl/model"
 )
 
+type UpdateAgentRequest struct {
+	Name      string `json:"name"`
+	Address   string `json:"address"`
+	UpdateKey bool   `json:"updateKey"`
+}
+
 func agentList(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
 	list, err := manager.GetAgents()
 	if err != nil {
@@ -74,20 +80,14 @@ func updateAgent(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
 		return httpapi.Response{Error: e, HTTPCode: 400}
 	}
 
-	var a model.Agent
-	err := r.JsonBody(&a)
+	var ar UpdateAgentRequest
+	err := r.JsonBody(&ar)
 	if err != nil {
 		return httpapi.Response{Error: err, HTTPCode: 400}
 	}
-	a.ID = id
 
-	updateKey := false
-	if uk := ps.ByName("updateKey"); uk != "" {
-		updateKey = true
-	}
-
-	if err := manager.UpdateAgent(a, updateKey); err != nil {
-		return httpapi.Response{Error: e, HTTPCode: 400}
+	if err := manager.UpdateAgent(model.Agent{Name: ar.Name, Address: ar.Address, ID: id}, ar.UpdateKey); err != nil {
+		return httpapi.Response{Error: err, HTTPCode: 400}
 	}
 
 	return httpapi.Response{HTTPCode: 200}

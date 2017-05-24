@@ -15,14 +15,22 @@ type Jobber interface {
 
 type JobNotification struct {
 	JF   *model.JobFile
-	dest string
+	host string
+	path string
 }
 
-func (jn *JobNotification) Destination() string {
-	return jn.dest
+func (jn *JobNotification) Host() string {
+	return jn.host
+}
+
+func (jn *JobNotification) Path() string {
+	return jn.path
 }
 
 func (jn *JobNotification) Body() []byte {
-	b, _ := json.Marshal(jn.JF)
+	var b []byte
+	if jn.JF != nil {
+		b, _ = json.Marshal(jn.JF)
+	}
 	return b
 }

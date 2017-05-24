@@ -1,4 +1,4 @@
-package sqlite
+package leveldb
 
 import (
 	"testing"
@@ -94,7 +94,7 @@ func TestJobs(t *testing.T) {
 		return
 	}
 
-	j = model.Job{
+	err = s.SaveJob(model.Job{
 		ID:         uuid.New().String(),
 		Agent:      &a1,
 		Definition: &jd,
@@ -103,12 +103,10 @@ func TestJobs(t *testing.T) {
 			Start: time.Date(2017, time.January, 1, 12, 12, 12, 0, time.UTC),
 			End:   time.Date(2017, time.January, 2, 12, 12, 12, 0, time.UTC),
 		},
-	}
-
-	err = s.SaveJob(j)
+	})
 	assert.Nil(err)
 
-	j = model.Job{
+	err = s.SaveJob(model.Job{
 		ID:         uuid.New().String(),
 		Agent:      &a1,
 		Definition: &jd,
@@ -117,11 +115,10 @@ func TestJobs(t *testing.T) {
 			Start: time.Date(2017, time.January, 1, 12, 12, 12, 0, time.UTC),
 			End:   time.Date(2017, time.January, 2, 12, 12, 12, 0, time.UTC),
 		},
-	}
-	err = s.SaveJob(j)
+	})
 	assert.Nil(err)
 
-	j = model.Job{
+	err = s.SaveJob(model.Job{
 		ID:         uuid.New().String(),
 		Agent:      &a,
 		Definition: &jd,
@@ -130,11 +127,10 @@ func TestJobs(t *testing.T) {
 			Start: time.Date(2017, time.January, 1, 12, 12, 12, 0, time.UTC),
 			End:   time.Date(2017, time.January, 2, 12, 12, 12, 0, time.UTC),
 		},
-	}
-	err = s.SaveJob(j)
+	})
 	assert.Nil(err)
 
-	j = model.Job{
+	err = s.SaveJob(model.Job{
 		ID:         uuid.New().String(),
 		Agent:      &a,
 		Definition: &jd,
@@ -143,11 +139,10 @@ func TestJobs(t *testing.T) {
 			Start: time.Date(2017, time.February, 1, 12, 12, 12, 0, time.UTC),
 			End:   time.Date(2017, time.February, 2, 12, 12, 12, 0, time.UTC),
 		},
-	}
-	err = s.SaveJob(j)
+	})
 	assert.Nil(err)
 
-	j = model.Job{
+	err = s.SaveJob(model.Job{
 		ID:         uuid.New().String(),
 		Agent:      &a,
 		Definition: &jd,
@@ -156,11 +151,10 @@ func TestJobs(t *testing.T) {
 			Start: time.Now(),
 			End:   time.Now(),
 		},
-	}
-	err = s.SaveJob(j)
+	})
 	assert.Nil(err)
 
-	j = model.Job{
+	err = s.SaveJob(model.Job{
 		ID:         uuid.New().String(),
 		Agent:      &a1,
 		Definition: &jd,
@@ -169,46 +163,45 @@ func TestJobs(t *testing.T) {
 			Start: time.Now(),
 			End:   time.Now(),
 		},
-	}
-	err = s.SaveJob(j)
+	})
 	assert.Nil(err)
 
-	jds, err := s.GetJobs(map[string]string{"state": "finished"})
+	jds, err := s.JobList(map[string]string{"state": "finished"})
 	if assert.Nil(err) {
 		assert.Len(jds, 5)
 	}
 
-	jds, err = s.GetJobs(map[string]string{"state": "running"})
+	jds, err = s.JobList(map[string]string{"state": "running"})
 	if assert.Nil(err) {
 		assert.Len(jds, 2)
 	}
 
-	jds, err = s.GetJobs(map[string]string{"agentID": a.ID})
+	jds, err = s.JobList(map[string]string{"agent": a.ID})
 	if assert.Nil(err) {
 		assert.Len(jds, 4)
 	}
 
-	jds, err = s.GetJobs(map[string]string{})
+	jds, err = s.JobList(map[string]string{})
 	if assert.Nil(err) {
 		assert.Len(jds, 7)
 	}
 
-	jds, err = s.GetJobs(map[string]string{"limit": "2"})
+	jds, err = s.JobList(map[string]string{"limit": "2"})
 	if assert.Nil(err) {
 		assert.Len(jds, 2)
 	}
 
-	jds, err = s.GetJobs(map[string]string{"start": "2017-02-01 00:00"})
+	jds, err = s.JobList(map[string]string{"start": "2017-02-01 00:00"})
 	if assert.Nil(err) {
 		assert.Len(jds, 4)
 	}
 
-	jds, err = s.GetJobs(map[string]string{"start": "2017-02-01 00:00", "end": "2017-03-01 00:00"})
+	jds, err = s.JobList(map[string]string{"start": "2017-02-01 00:00", "end": "2017-03-01 00:00"})
 	if assert.Nil(err) {
 		assert.Len(jds, 1)
 	}
 
-	jds, err = s.GetJobs(map[string]string{"end": "2017-02-01 00:00"})
+	jds, err = s.JobList(map[string]string{"end": "2017-02-01 00:00"})
 	if assert.Nil(err) {
 		assert.Len(jds, 3)
 	}

@@ -114,7 +114,7 @@ func (b *Backup) Run(finished chan<- string) {
 		for result := range q.Results() {
 			//send to notification Q
 			jf := result.(model.JobFile)
-			b.Notifier.Send(&JobNotification{JF: &jf, dest: b.Coordinator.Address})
+			b.Notifier.Send(&JobNotification{JF: &jf, host: b.Coordinator.Address, path: "/jobs/" + b.Job.ID + "/files"})
 			processedFiles++
 			if processedFiles > 10 {
 				b.addComplete(processedFiles)
@@ -143,6 +143,7 @@ func (b *Backup) Run(finished chan<- string) {
 	}
 
 	log.Debug("backupJob", "sending finish")
+	b.Notifier.Send(&JobNotification{host: b.Coordinator.Address, path: "/jobs/" + b.Job.ID + "/complete"})
 
 	// notify our manager that we are done
 	finished <- b.Job.ID

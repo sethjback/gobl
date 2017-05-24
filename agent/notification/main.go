@@ -4,8 +4,10 @@ import "crypto/rsa"
 
 // Notification must be implemented on messages passed through the notifier
 type Notification interface {
-	// Desitnation of the notification
-	Destination() string
+	// Host to notify notification
+	Host() string
+	// Path on the host
+	Path() string
 	// Body of the notification
 	Body() []byte
 }

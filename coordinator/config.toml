@@ -7,7 +7,7 @@ shutdown_wait = 20
 private_key = "./private.pem" # Private Key used to sign requests
 
 [db]
-path = "./testdb" # Path to the DB file (sqlite at the moment)
+path = "./testdb" # Path to the DB file (leveldb at the moment)
 
 # Logging Options
 [logging]

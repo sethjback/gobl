@@ -46,7 +46,7 @@ func createSaltedHash(salt []byte, password []byte) []byte {
 // PasswordHash generates a hex encoded sha1 hash of the password with crypt/rand salt
 // The returned []byte contans the salt followed by the sha1 sum
 // The function will only error if the install's secure random generator is not working
-func PasswordHash(password []byte) ([]byte, goblerr.Error) {
+func PasswordHash(password []byte) ([]byte, error) {
 	salt, err := generateSalt()
 	if err != nil {
 		return nil, goblerr.New("Unable to generate password hash", ErrorPasswordHash, err)

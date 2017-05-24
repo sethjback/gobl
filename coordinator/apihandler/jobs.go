@@ -10,6 +10,11 @@ import (
 	"github.com/sethjback/gobl/model"
 )
 
+type JobRequest struct {
+	Definition model.JobDefinition `json:"jobDefinition"`
+	Agent      string              `json:"agentId"`
+}
+
 func jobList(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
 	jobs, err := manager.JobList(queryToMap(r.Query))
 	if err != nil {
@@ -96,4 +101,27 @@ func finishJob(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
 	}
 
 	return httpapi.Response{HTTPCode: 200}
+}
+
+func newJob(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
+	var jr JobRequest
+	gerr := r.JsonBody(&jr)
+	if gerr != nil {
+		return httpapi.Response{Error: gerr, HTTPCode: 400}
+	}
+
+	aID, err := uuid.Parse(jr.Agent)
+	if err != nil {
+		return httpapi.Response{Error: errors.New("Unable to parse agent ID: " + err.Error()), HTTPCode: 400}
+	}
+
+	jr.Agent = aID.String()
+
+	//TODO: validate jobRequest
+	id, err := manager.NewJob(jr.Definition, jr.Agent)
+	if err != nil {
+		return httpapi.Response{Error: err, HTTPCode: 400}
+	}
+
+	return httpapi.Response{Data: map[string]interface{}{"id": id}, HTTPCode: 201}
 }

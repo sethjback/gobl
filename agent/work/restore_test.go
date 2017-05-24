@@ -30,7 +30,7 @@ func TestRestore(t *testing.T) {
 	}
 
 	var bbuf bytes.Buffer
-	gz, err := gzip.NewWriterLevel(&bbuf, 5)
+	gz, _ := gzip.NewWriterLevel(&bbuf, 5)
 	_, err = gz.Write(data)
 	if !assert.Nil(err) {
 		return

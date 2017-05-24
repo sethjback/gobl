@@ -1,4 +1,4 @@
-package sqlite
+package leveldb
 
 import (
 	"testing"
@@ -6,7 +6,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/sethjback/gobl/config"
 	"github.com/sethjback/gobl/files"
-	"github.com/sethjback/gobl/goblerr"
 	"github.com/sethjback/gobl/model"
 	"github.com/sethjback/gobl/util/log"
 	"github.com/stretchr/testify/assert"
@@ -44,37 +43,50 @@ func TestFiles(t *testing.T) {
 		return
 	}
 
-	f1, err := s.getFile(jobID, "/dir1/dir2/dir3", "file1.jpg")
+	f1, err := s.getFile(jobID, "/dir1/dir2/dir3/file1.jpg")
 	if assert.Nil(err) {
-		assert.Equal(f.File, f1.file)
-		assert.Equal(f.State, f1.state)
-		assert.Equal(f.Error, f1.err)
+		assert.Equal(f.File, f1.File)
+		assert.Equal(f.State, f1.State)
+		assert.Equal(f.Error, f1.Error)
 	}
 
 	f.State = "failed"
-	f.Error = goblerr.New("Device busy", "WriteFileFailed", nil)
+	f.Error = "unable to write file: device busy"
 	err = s.SaveJobFile(jobID, f)
 	assert.Nil(err)
 
-	f1, err = s.getFile(jobID, "/dir1/dir2/dir3", "file1.jpg")
+	f1, err = s.getFile(jobID, "/dir1/dir2/dir3/file1.jpg")
 	if assert.Nil(err) {
-		assert.Equal(f.File, f1.file)
-		assert.Equal(f.State, f1.state)
-		assert.Equal(f.Error, f1.err)
+		assert.Equal(f.File, f1.File)
+		assert.Equal(f.State, f1.State)
+		assert.Equal(f.Error, f1.Error)
 	}
 
 	f.File.Path = "/dir1/dir2/dir3/file2.jpg"
 	f.State = "success"
-	f.Error = nil
+	f.Error = ""
 	err = s.SaveJobFile(jobID, f)
 	if !assert.Nil(err) {
 		return
 	}
+	f1, err = s.getFile(jobID, "/dir1/dir2/dir3/file2.jpg")
+	if assert.Nil(err) {
+		assert.Equal(f.File, f1.File)
+		assert.Equal(f.State, f1.State)
+		assert.Equal(f.Error, f1.Error)
+	}
+
 	f.File.Path = "/dir1/dir2/dir3/file3.jpg"
 	f.State = "success"
 	err = s.SaveJobFile(jobID, f)
 	if !assert.Nil(err) {
 		return
+	}
+	f1, err = s.getFile(jobID, "/dir1/dir2/dir3/file3.jpg")
+	if assert.Nil(err) {
+		assert.Equal(f.File, f1.File)
+		assert.Equal(f.State, f1.State)
+		assert.Equal(f.Error, f1.Error)
 	}
 
 	f.File.Path = "/dir1/dir2/dir3.2/file1.jpg"
@@ -92,57 +104,52 @@ func TestFiles(t *testing.T) {
 
 	f.File.Path = "/dir1/dir2/dir3.3/file1.jpg"
 	f.State = "failed"
-	f.Error = goblerr.New("Device busy", "WriteFileFailed", nil)
+	f.Error = "unable to save file (device busy)"
 	err = s.SaveJobFile(jobID, f)
 	if !assert.Nil(err) {
 		return
 	}
 	f.File.Path = "/dir1/dir2/dir3.3/file2.jpg"
 	f.State = "success"
-	f.Error = nil
+	f.Error = ""
 	err = s.SaveJobFile(jobID, f)
 	if !assert.Nil(err) {
 		return
 	}
 	f.File.Path = "/dir1/dir2/dir3.3/file3.jpg"
 	f.State = "failed"
-	f.Error = goblerr.New("Device busy", "WriteFileFailed", nil)
+	f.Error = "unable to save file (device busy)"
 	err = s.SaveJobFile(jobID, f)
 	if !assert.Nil(err) {
 		return
 	}
 
-	jfs, err := s.JobFiles(jobID, map[string]string{"state": "failed"})
+	jfs, err := s.JobFileList(jobID, map[string]string{"state": "failed"})
 	if assert.Nil(err) {
 		assert.Len(jfs, 3)
 	}
 
-	jfs, err = s.JobFiles(jobID, map[string]string{"state": "failed", "dir": "/dir1/dir2/dir3"})
+	jfs, err = s.JobFileList(jobID, map[string]string{"state": "failed", "dir": "/dir1/dir2/dir3"})
 	if assert.Nil(err) {
 		assert.Len(jfs, 1)
 	}
 
-	jfs, err = s.JobFiles(jobID, map[string]string{"state": "failed", "dir": "/dir1/dir2/dir3.2"})
+	jfs, err = s.JobFileList(jobID, map[string]string{"state": "failed", "dir": "/dir1/dir2/dir3.2"})
 	if assert.Nil(err) {
 		assert.Len(jfs, 0)
 	}
 
-	jfs, err = s.JobFiles(jobID, map[string]string{})
-	if assert.Nil(err) {
-		assert.Len(jfs, 8)
-	}
-
-	jfs, err = s.JobFiles(jobID, map[string]string{"name": "file1.jpg"})
+	jfs, err = s.JobFileList(jobID, map[string]string{"dir": "/dir1/dir2/dir3"})
 	if assert.Nil(err) {
 		assert.Len(jfs, 3)
 	}
 
-	jfc, err := s.jobFilesCount(jobID, map[string]string{"state": "failed"})
+	jfc, err := s.jobFileCount(jobID, map[string]string{"state": "failed"})
 	if assert.Nil(err) {
 		assert.Equal(3, jfc)
 	}
 
-	jfc, err = s.jobFilesCount(jobID, map[string]string{})
+	jfc, err = s.jobFileCount(jobID, map[string]string{"dir": "*"})
 	if assert.Nil(err) {
 		assert.Equal(8, jfc)
 	}
@@ -200,5 +207,4 @@ func TestFiles(t *testing.T) {
 		assert.Contains(dirs, "dir1")
 		assert.Contains(dirs, "dir1.2")
 	}
-
 }

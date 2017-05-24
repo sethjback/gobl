@@ -31,7 +31,7 @@ func (b Backup) Do() interface{} {
 	fileHash, err := imoHash.SumFile(b.File)
 	if err != nil {
 		log.Infof("backupWork", "(%s) hash failed: %s", b.File, err)
-		jf.Error = goblerr.New("unable to hash file", ErrorFileHash, "backup", err)
+		jf.Error = goblerr.New("unable to hash file", ErrorFileHash, err).Error()
 		jf.State = StateErrors
 		return jf
 	}
@@ -41,7 +41,7 @@ func (b Backup) Do() interface{} {
 	svrs, err := engine.BuildSavers(b.Engines)
 	if err != nil {
 		log.Infof("backupWork", "build savers failed: %s", err)
-		jf.Error = goblerr.New("unable bulid save engines", ErrorSaveEngines, "backup", err)
+		jf.Error = goblerr.New("unable bulid save engines", ErrorSaveEngines, err).Error()
 		jf.State = StateErrors
 
 		return jf
@@ -49,7 +49,7 @@ func (b Backup) Do() interface{} {
 
 	eng, saveNeeded, err := engine.NewBackupEngine(jf.File, svrs...)
 	if err != nil {
-		jf.Error = goblerr.New("unable bulid save engines", ErrorSaveEngines, "backup", err)
+		jf.Error = goblerr.New("unable bulid save engines", ErrorSaveEngines, err).Error()
 		jf.State = StateErrors
 		return jf
 	}
@@ -62,7 +62,7 @@ func (b Backup) Do() interface{} {
 
 	fileHandle, err := os.Open(b.File)
 	if err != nil {
-		jf.Error = goblerr.New("unable to open file", ErrorFileOps, "backup", err)
+		jf.Error = goblerr.New("unable to open file", ErrorFileOps, err).Error()
 		jf.State = StateErrors
 		return jf
 	}
@@ -70,7 +70,7 @@ func (b Backup) Do() interface{} {
 
 	mods, err := modification.Build(b.Modifications, modification.Forward)
 	if err != nil {
-		jf.Error = goblerr.New("unable bulid modifications", ErrorModifications, "backup", err)
+		jf.Error = goblerr.New("unable bulid modifications", ErrorModifications, err).Error()
 		jf.State = StateErrors
 		return jf
 	}
@@ -92,7 +92,7 @@ func (b Backup) Do() interface{} {
 	//Wait for an error or jobdone
 	select {
 	case err := <-pipe.Erroc:
-		jf.Error = goblerr.New("file save failed", ErrorSave, "backup", err)
+		jf.Error = goblerr.New("file save failed", ErrorSave, err).Error()
 		jf.State = StateErrors
 	case <-done:
 		jf.State = StateComplete

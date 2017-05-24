@@ -15,6 +15,7 @@ func jobList(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
 
 func newJob(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
 	var job model.Job
+
 	err := r.JsonBody(&job)
 	if err != nil {
 		return httpapi.Response{Error: err, HTTPCode: 400}
