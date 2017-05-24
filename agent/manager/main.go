@@ -4,7 +4,6 @@ package manager
 
 import (
 	"crypto/rsa"
-	"fmt"
 	"runtime"
 	"sync"
 
@@ -83,10 +82,10 @@ func Status() map[string]interface{} {
 }
 
 // NewRestore creates and starts a new restore job
-func NewRestore(restoreJob model.Job) goblerr.Error {
+func NewRestore(restoreJob model.Job) error {
 	r, err := job.NewRestore(restoreJob, conf.Coordinator, notifier)
 	if err != nil {
-		return goblerr.New("Unable to create job", ErrorCreateJob, "manager", err.Error())
+		return goblerr.New("Unable to create job", ErrorCreateJob, err)
 	}
 
 	addJob(restoreJob.ID, r)
@@ -96,10 +95,10 @@ func NewRestore(restoreJob model.Job) goblerr.Error {
 }
 
 // NewBackup creates a new Job worker and starts
-func NewBackup(backupJob model.Job) goblerr.Error {
+func NewBackup(backupJob model.Job) error {
 	b, err := job.NewBackup(backupJob, conf.Coordinator, notifier)
 	if err != nil {
-		return goblerr.New("Unable to create job", ErrorCreateJob, "manager", err.Error())
+		return goblerr.New("Unable to create job", ErrorCreateJob, err)
 	}
 
 	addJob(backupJob.ID, b)
@@ -109,7 +108,7 @@ func NewBackup(backupJob model.Job) goblerr.Error {
 }
 
 // Cancel stops a currently running Job
-func Cancel(id string) goblerr.Error {
+func Cancel(id string) error {
 	jobMutex.Lock()
 	defer jobMutex.Unlock()
 	if job, ok := active[id]; ok {
@@ -117,7 +116,7 @@ func Cancel(id string) goblerr.Error {
 		return nil
 	}
 
-	return goblerr.New("I was unable to find that Job", ErrorFindJob, "manager", "")
+	return goblerr.New("I was unable to find that Job", ErrorFindJob, nil)
 }
 
 func waiter() {
@@ -151,15 +150,15 @@ func addJob(id string, job job.Jobber) {
 	jobMutex.Unlock()
 }
 
-func JobStatus(id string) (model.JobMeta, goblerr.Error) {
+func JobStatus(id string) (model.JobMeta, error) {
 	var status model.JobMeta
-	var err goblerr.Error
+	var err error
 	jobMutex.Lock()
 	j, ok := active[id]
 	if ok {
 		status = j.Status()
 	} else {
-		err = goblerr.New("I was unable to find that Job", ErrorFindJob, "manager", "")
+		err = goblerr.New("I was unable to find that Job", ErrorFindJob, nil)
 	}
 	jobMutex.Unlock()
 	return status, err
@@ -175,11 +174,10 @@ func jobIds() []string {
 	return ids
 }
 
-func Key() (string, goblerr.Error) {
-	fmt.Printf("Key: %+v\n\n", akey)
+func Key() (string, error) {
 	pks, err := keys.PublicKey(akey)
 	if err != nil {
-		return "", goblerr.New("Unable to open key", ErrorDecodeKey, "manager", err.Error())
+		return "", goblerr.New("Unable to open key", ErrorDecodeKey, err)
 	}
 
 	return pks, nil

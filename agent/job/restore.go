@@ -99,7 +99,7 @@ func (r *Restore) Run(finished chan<- string) {
 		for result := range q.Results() {
 			//send to notification Q
 			jf := result.(model.JobFile)
-			r.Notifier.Send(&JobNotification{JF: &jf, dest: r.Coordinator.Address})
+			r.Notifier.Send(&JobNotification{JF: &jf, host: r.Coordinator.Address, path: "/jobs/" + r.Job.ID + "/files"})
 			processedFiles++
 			if processedFiles > 10 {
 				r.addComplete(processedFiles)
@@ -120,6 +120,9 @@ func (r *Restore) Run(finished chan<- string) {
 	case <-done:
 		//finished!
 	}
+
+	log.Debug("restoreJob", "sending finish")
+	r.Notifier.Send(&JobNotification{host: r.Coordinator.Address, path: "/jobs/" + r.Job.ID + "/complete"})
 
 	// notify our manager that we are done
 	finished <- r.Job.ID

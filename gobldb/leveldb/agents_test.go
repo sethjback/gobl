@@ -1,4 +1,4 @@
-package sqlite
+package leveldb
 
 import (
 	"testing"
@@ -10,16 +10,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestAgent(t *testing.T) {
+func TestAgents(t *testing.T) {
 	assert := assert.New(t)
 	log.Init(config.Log{Level: log.Level.Error})
+
 	s, err := testDB()
 	if !assert.Nil(err) {
 		return
 	}
-
 	defer s.Close()
-
 	a := model.Agent{
 		ID:        uuid.New().String(),
 		Name:      "Test Agent 1",

@@ -1,4 +1,4 @@
-package sqlite
+package leveldb
 
 import (
 	"testing"
@@ -35,7 +35,7 @@ func TestSchedule(t *testing.T) {
 	err = s.SaveSchedule(sc)
 	assert.Nil(err)
 
-	sc1, err := s.getSchedule(sc.ID)
+	sc1, err := s.GetSchedule(sc.ID)
 	if assert.Nil(err) {
 		assert.Equal(sc, *sc1)
 	}
@@ -46,7 +46,7 @@ func TestSchedule(t *testing.T) {
 	err = s.SaveSchedule(sc)
 	assert.Nil(err)
 
-	sc1, err = s.getSchedule(sc.ID)
+	sc1, err = s.GetSchedule(sc.ID)
 	if assert.Nil(err) {
 		assert.Equal(sc, *sc1)
 	}

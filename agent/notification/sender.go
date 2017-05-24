@@ -2,6 +2,7 @@ package notification
 
 import (
 	"bytes"
+	"fmt"
 	"net/http"
 
 	"github.com/sethjback/gobl/httpapi"
@@ -29,15 +30,17 @@ type Result struct {
 func (s *Sender) Do() interface{} {
 	req := httpapi.Request{
 		Headers: http.Header{},
-		Host:    s.message.note.Destination(),
-		Path:    "/notification", //TODO: need a place for this
+		Host:    s.message.note.Host(),
+		Path:    s.message.note.Path(),
 		Client:  s.client,
 		Method:  "POST",
 		Body:    bytes.NewReader(s.message.note.Body()),
 	}
+	fmt.Printf("Sending: %+v\n", req)
 
 	resp, err := req.Send(s.signer)
 	if err != nil || resp.HTTPCode != 200 {
+		fmt.Printf("err: %+v\n", resp, err)
 		return &Result{state: Retry, err: err, message: s.message}
 	}
 

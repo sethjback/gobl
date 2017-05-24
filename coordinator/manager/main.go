@@ -5,7 +5,7 @@ import (
 	"github.com/sethjback/gobl/config"
 	"github.com/sethjback/gobl/email"
 	"github.com/sethjback/gobl/gobldb"
-	"github.com/sethjback/gobl/gobldb/sqlite"
+	"github.com/sethjback/gobl/gobldb/leveldb"
 	"github.com/sethjback/gobl/keys"
 	"github.com/sethjback/gobl/util/log"
 )
@@ -18,8 +18,8 @@ var verifiers map[string]keys.Verifier
 
 // Init sets up the environement to run
 func Init(c *config.Config) error {
-	gDb = &sqlite.SQLite{}
-	err := gDb.Init(c.DB)
+	var err error
+	gDb, err = leveldb.New(c.DB)
 	if err != nil {
 		return err
 	}
@@ -86,4 +86,5 @@ func SendTestEmail() error {
 
 func Shutdown() {
 	schedules.Stop()
+	gDb.Close()
 }

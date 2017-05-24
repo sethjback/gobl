@@ -178,7 +178,7 @@ func (n *baseNotifier) manageResults() {
 			}
 			n.rin <- r.message
 		case Fail:
-			log.Errorf("notifier", "Unable send message to: %s || %s", r.message.note.Destination(), string(r.message.note.Body()))
+			log.Errorf("notifier", "Unable send message to: %s || %s", r.message.note.Host()+"/"+r.message.note.Path(), string(r.message.note.Body()))
 		default:
 			//move on
 		}

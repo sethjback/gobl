@@ -45,7 +45,7 @@ func JobStatus(id string) (*model.JobMeta, error) {
 
 // JobList builds a list of jobs based on the given paramiters
 func JobList(filters map[string]string) ([]model.Job, error) {
-	list, err := gDb.GetJobs(filters)
+	list, err := gDb.JobList(filters)
 	if list == nil {
 		list = make([]model.Job, 0)
 	}
@@ -74,7 +74,7 @@ func FinishJob(id string) error {
 	}
 
 	job.Meta.State = model.StateFinished
-	job.Meta.End = time.Now()
+	job.Meta.End = time.Now().UTC()
 
 	gDb.SaveJob(*job)
 
@@ -100,31 +100,63 @@ func JobFiles(jobID string, filters map[string]string) ([]model.JobFile, error) 
 		return nil, err
 	}
 
-	return gDb.JobFiles(jobID, filters)
+	return gDb.JobFileList(jobID, filters)
 }
 
-func NewJob(jobRequest model.Job) (string, error) {
-	jobRequest.ID = uuid.New().String()
-	jobRequest.Meta = &model.JobMeta{State: model.StateNew, Start: time.Now().UTC()}
+func JobDirectories(jobID, parent string) ([]string, error) {
+	_, err := gDb.GetJob(jobID)
+	if err != nil {
+		return nil, err
+	}
 
-	err := gDb.SaveJob(jobRequest)
+	if parent == "" {
+		parent = "/"
+	}
+
+	return gDb.JobDirectories(jobID, parent)
+}
+
+func NewJob(jobDefinition model.JobDefinition, agentID string) (string, error) {
+	agent, err := gDb.GetAgent(agentID)
 	if err != nil {
 		return "", err
 	}
 
-	aR := &httpapi.Request{Host: jobRequest.Agent.Address, Path: "/jobs", Method: "POST"}
-	jobRequest.Agent = nil
-	err = aR.SetBody(jobRequest)
+	job := model.Job{
+		ID:         uuid.New().String(),
+		Meta:       &model.JobMeta{State: model.StateNew, Start: time.Now().UTC()},
+		Agent:      agent,
+		Definition: &jobDefinition,
+	}
+
+	err = gDb.SaveJob(job)
 	if err != nil {
+		return "", err
+	}
+
+	aR := httpapi.NewRequest(agent.Address, "/jobs", "POST")
+	job.Agent = nil
+	err = aR.SetBody(job)
+	if err != nil {
+		job.Agent = agent
+		job.Meta.State = model.StateFailed
+		job.Meta.End = time.Now().UTC()
+		job.Meta.Message = "Unable to create job on agent: " + err.Error()
+		gDb.SaveJob(job)
 		return "", err
 	}
 
 	response, err := aR.Send(signer)
 	if err != nil {
+		job.Agent = agent
+		job.Meta.State = model.StateFailed
+		job.Meta.End = time.Now().UTC()
+		job.Meta.Message = "Unable to create job on agent: " + err.Error()
+		gDb.SaveJob(job)
 		return "", err
 	}
 
-	return jobRequest.ID, response.Error
+	return job.ID, response.Error
 }
 
 func GetJob(jobID string) (*model.Job, error) {

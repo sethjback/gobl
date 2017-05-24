@@ -47,6 +47,10 @@ type Coordinator struct {
 type DB struct {
 	// Path to the database file
 	Path string `toml:"path"`
+
+	// Driver
+	// Currently only leveldb is supported.
+	Driver string `toml:"driver"`
 }
 
 // Log defines the logging paramiters

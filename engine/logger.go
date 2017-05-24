@@ -129,20 +129,20 @@ func (e *Logger) configure(options map[string]interface{}) error {
 		case strings.ToLower(LoggerOptionLogPath):
 			vString, ok := v.(string)
 			if !ok {
-				return goblerr.New("Invalid option", ErrorInvalidOptionValue, "logger", LoggerOptionLogPath+" must be a string")
+				return goblerr.New("Invalid option", ErrorInvalidOptionValue, LoggerOptionLogPath+" must be a string")
 			}
 			e.logPath = vString
 		case strings.ToLower(LoggerOptionOverwrite):
 			vbool, ok := v.(bool)
 			if !ok {
-				return goblerr.New("Invalid option", ErrorInvalidOptionValue, "logger", LoggerOptionOverwrite+" must be a bool")
+				return goblerr.New("Invalid option", ErrorInvalidOptionValue, LoggerOptionOverwrite+" must be a bool")
 			}
 			e.overWrite = vbool
 		}
 	}
 
 	if e.logPath == "" {
-		return goblerr.New("Must provide log path", ErrorRequiredOptionMissing, "logger", LoggerOptionLogPath+" is required")
+		return goblerr.New("Must provide log path", ErrorRequiredOptionMissing, LoggerOptionLogPath+" is required")
 	}
 
 	var lFlags int

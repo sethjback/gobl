@@ -13,25 +13,23 @@ type ScheduledJob struct {
 }
 
 func (s *ScheduledJob) Run() {
-	var err error
-	job := model.Job{}
-	job.Definition, err = gDb.GetJobDefinition(s.Schedule.JobDefinitionID)
+	jdef, err := gDb.GetJobDefinition(s.Schedule.JobDefinitionID)
 	if err != nil {
 		log.Errorf("scheduler", "Could not job definition for schedule %+v. Error: %v", *s, err)
 	}
 
-	job.Agent, err = gDb.GetAgent(s.Schedule.AgentID)
+	a, err := gDb.GetAgent(s.Schedule.AgentID)
 	if err != nil {
 		log.Errorf("scheduler", "Could not find agent for schedule %+v. Error: %v", *s, err)
 	}
 
-	job.ID, err = NewJob(job)
+	jID, err := NewJob(*jdef, a.ID)
 
 	if err != nil {
-		log.Errorf("scheduler", "Could not run scheduled Backup: %v. Error: %v", *s, err)
+		log.Errorf("scheduler", "Could not run scheduled job: %v. Error: %v", *s, err)
 	}
 
-	log.Infof("scheduler", "Scheduled Job started. ID: %v", job.ID)
+	log.Infof("scheduler", "Scheduled Job started. ID: %v", jID)
 }
 
 func NewSchedule(s model.Schedule) (string, error) {

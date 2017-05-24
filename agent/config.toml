@@ -9,7 +9,7 @@ private_key = "./private.pem" # Path to a private key the Agent will use to auth
 # The coordinator in charge of managing this agent
 [coordinator]
 public_key = "./public.pem" # used to verify the request signature
-address = "127.0.0.1:8020"
+address = "http://127.0.0.1:8030"
 
 #Logging options:
 [logging]

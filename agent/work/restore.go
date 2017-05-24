@@ -28,7 +28,7 @@ func (r Restore) Do() interface{} {
 	svrs, err := engine.BuildSavers([]engine.Definition{r.From})
 	if err != nil {
 		jf.State = StateErrors
-		jf.Error = goblerr.New("unable to get from reader", ErrorRestoreEngines, "restore", err)
+		jf.Error = goblerr.New("unable to get from reader", ErrorRestoreEngines, err).Error()
 		return jf
 	}
 
@@ -36,14 +36,14 @@ func (r Restore) Do() interface{} {
 	reader, err := svrs[0].Retrieve(r.File)
 	if err != nil {
 		jf.State = StateErrors
-		jf.Error = goblerr.New("unable to get from reader", ErrorRestoreEngines, "restore", err)
+		jf.Error = goblerr.New("unable to get from reader", ErrorRestoreEngines, err).Error()
 		return jf
 	}
 
 	rers, err := engine.BuildRestorers(r.To)
 	if err != nil {
 		log.Infof("restore", "build to failed: %s", err)
-		jf.Error = goblerr.New("unable to build to engines", ErrorRestoreEngines, "restore", err)
+		jf.Error = goblerr.New("unable to build to engines", ErrorRestoreEngines, err).Error()
 		jf.State = StateErrors
 
 		return jf
@@ -51,14 +51,14 @@ func (r Restore) Do() interface{} {
 
 	eng, err := engine.NewRestoreEngine(r.File, rers...)
 	if err != nil {
-		jf.Error = goblerr.New("unable to build to engines", ErrorRestoreEngines, "restore", err)
+		jf.Error = goblerr.New("unable to build to engines", ErrorRestoreEngines, err).Error()
 		jf.State = StateErrors
 		return jf
 	}
 
 	mods, err := modification.Build(r.Modifications, modification.Backward)
 	if err != nil {
-		jf.Error = goblerr.New("unable to build to modification pipeline", ErrorModifications, "restore", err)
+		jf.Error = goblerr.New("unable to build to modification pipeline", ErrorModifications, err).Error()
 		jf.State = StateErrors
 		return jf
 	}
@@ -80,7 +80,7 @@ func (r Restore) Do() interface{} {
 	//Wait for an error or jobdone
 	select {
 	case err := <-pipe.Erroc:
-		jf.Error = goblerr.New("file restore failed", ErrorRestore, "restore", err)
+		jf.Error = goblerr.New("file restore failed", ErrorRestore, err).Error()
 		jf.State = StateErrors
 	case <-done:
 		log.Debugf("restoreWorker", "Restore Done: %v", r.File.Path)

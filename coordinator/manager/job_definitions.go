@@ -24,7 +24,7 @@ func GetJobDefinition(id string) (*model.JobDefinition, error) {
 }
 
 func GetJobDefinitions() ([]model.JobDefinition, error) {
-	jdefs, err := gDb.GetJobDefinitions()
+	jdefs, err := gDb.JobDefinitionList()
 	if jdefs == nil {
 		jdefs = make([]model.JobDefinition, 0)
 	}
