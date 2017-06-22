@@ -1,97 +1,52 @@
 package config
 
 import (
+	"bufio"
 	"errors"
-	"io/ioutil"
-
-	"github.com/BurntSushi/toml"
+	"fmt"
+	"io"
+	"os"
+	"strings"
 )
 
-// Config contains all the possible config options
-type Config struct {
-	Server      Server      `toml:"server"`
-	DB          DB          `toml:"db"`
-	Log         Log         `toml:"logging"`
-	Email       Email       `toml:"email"`
-	Coordinator Coordinator `toml:"coordinator"`
-}
-
-// Server config
-type Server struct {
-
-	// Listen defines what address:port to listen on
-	Listen string `toml:"listen"`
-
-	// Compress the server output
-	Compress bool `toml:"compress"`
-
-	// ShutdownWait is the number of seconds to wait for backup processes
-	// to finish before stopping the server
-	ShutdownWait int `toml:"shutdown_wait"`
-
-	// Private key for signing reqests sent to the coordinator
-	PrivateKey string `toml:"private_key"`
-}
-
-// Coordinator config.
-// This is used to tell gobl agents about the coordinator so that they can
-// confirm its identity when it connects
-type Coordinator struct {
-	// PublicKey is the path to the coordinator's public key
-	PublicKey string `toml:"public_key"`
-	// Address of the coordinator managing this agent
-	Address string `toml:"address"`
-}
-
-// DB Config
-type DB struct {
-	// Path to the database file
-	Path string `toml:"path"`
-
-	// Driver
-	// Currently only leveldb is supported.
-	Driver string `toml:"driver"`
-}
-
-// Log defines the logging paramiters
-type Log struct {
-	Level     int    `toml:"level"`
-	Verbosity int    `toml:"verbosity"`
-	Output    string `toml:"output"`
-}
-
-// Email config
-type Email struct {
-	Server         string `toml:"server"`
-	From           string `toml:"from"`
-	To             string `toml:"to"`
-	Subject        string `toml:"subject"`
-	Authentication bool   `toml:"auth"`
-	User           string `toml:"user"`
-	Password       string `toml:"password"`
-}
-
-// Configured returns true if we have enough information to attempt to send emails
-func (e *Email) Configured() bool {
-	return len(e.Server) != 0 && len(e.From) != 0 && len(e.To) != 0
-}
-
-// ParseConfig parses a config file and returns a config object
-func Parse(path string) (*Config, error) {
-	if path == "" {
-		return nil, errors.New("Config path empty")
+func Map(filePath string) (map[string]string, error) {
+	amap := map[string]string{}
+	for _, v := range os.Environ() {
+		vs := strings.Split(v, "=")
+		if len(vs) == 2 {
+			amap[vs[0]] = vs[1]
+		}
 	}
 
-	cFile, err := ioutil.ReadFile(path)
-	if err != nil {
-		return nil, err
+	if filePath != "" {
+		f, err := os.Open(filePath)
+		if err != nil {
+			return nil, errors.New(fmt.Sprintf("Error opening config file: %v", err))
+		}
+		s := bufio.NewScanner(io.LimitReader(f, 10000000))
+		for s.Scan() {
+			line := s.Text()
+			if len(line) == 0 || len(line) < 2 || line[:2] == "//" {
+				continue
+			}
+			split := strings.Split(line, "=")
+			if len(split) != 2 {
+				continue
+			}
+			amap[strings.TrimSpace(split[0])] = strings.TrimSpace(split[1])
+		}
+		err = f.Close()
+		if err != nil {
+			return nil, errors.New(fmt.Sprint("unable to close config file"))
+		}
 	}
 
-	var conf Config
+	return amap, nil
+}
 
-	if _, err := toml.Decode(string(cFile), &conf); err != nil {
-		return nil, err
+func SetEnvMap(env map[string]string, store Store) Store {
+	for k, v := range env {
+		store.Add(k, v)
 	}
-
-	return &conf, nil
+	return store
 }

@@ -1,13 +1,22 @@
 package gobldb
 
-import "github.com/sethjback/gobl/model"
+import (
+	"errors"
 
-// QueryDateFormat defines the format we want dates in
-const QueryDateFormat = "2006-01-02 15:04"
+	"github.com/sethjback/gobl/config"
+	"github.com/sethjback/gobl/gobldb/leveldb"
+	"github.com/sethjback/gobl/model"
+)
+
+type key int
+
+const Config key = 0
 
 // Database is the interface that must be implemented by the DB driver
 type Database interface {
 	Close() error
+	SaveConfig(config.Store, map[string]string) error
+	Init(config.Store) error
 
 	// AGENTS
 	SaveAgent(model.Agent) error
@@ -40,4 +49,53 @@ type Database interface {
 	UserList() ([]model.User, error)
 	SaveUser(user model.User) error
 	DeleteUser(email string) error
+}
+
+type dbConfig struct {
+	driver string
+}
+
+func SaveConfig(cs config.Store, env map[string]string) error {
+	dbc := &dbConfig{}
+	for k, v := range env {
+		switch k {
+		case "DB_DRIVER":
+			dbc.driver = v
+		}
+	}
+
+	cs.Add(Config, dbc)
+
+	var err error
+
+	switch dbc.driver {
+	case "leveldb":
+		l := &leveldb.Leveldb{}
+		err = l.SaveConfig(cs, env)
+	}
+
+	return err
+}
+
+func configFromStore(cs config.Store) *dbConfig {
+	if dbc, ok := cs.Get(Config); ok {
+		return dbc.(*dbConfig)
+	}
+	return nil
+}
+
+func Get(cs config.Store) (Database, error) {
+	dbc := configFromStore(cs)
+	if dbc == nil {
+		return nil, errors.New("Unable to find database config")
+	}
+
+	switch dbc.driver {
+	case "leveldb":
+		l := &leveldb.Leveldb{}
+		err := l.Init(cs)
+		return l, err
+	default:
+		return nil, errors.New("Invalid DB driver specified")
+	}
 }

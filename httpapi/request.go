@@ -19,7 +19,6 @@ import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/sethjback/gobl/goblerr"
 	"github.com/sethjback/gobl/keys"
-	"github.com/sethjback/gobl/util/log"
 )
 
 const (
@@ -31,11 +30,8 @@ const (
 	HeaderGoblSig  = "x-gobl-signature"
 )
 
-// paramsKey for use with context
-type key int
-
 // requestParms is the key for standardized request parameters
-const request key = 1
+const requestKey key = 1
 
 // Request provides a starndardized way of accessing incoming requests
 // We standardize information both for receiving and sending.
@@ -65,7 +61,7 @@ func NewRequest(host, path, method string) *Request {
 
 // RequestFromContext returns the reqest that has been stored in a context
 func RequestFromContext(ctx context.Context) *Request {
-	return ctx.Value(request).(*Request)
+	return ctx.Value(requestKey).(*Request)
 }
 
 // String returns the request string that is appropriate for signing
@@ -115,7 +111,6 @@ func (r *Request) JsonBody(decodeTo interface{}) error {
 	}
 
 	if err = json.Unmarshal(b, decodeTo); err != nil {
-		log.Debug(err.Error())
 		return goblerr.New("Body not valid json", ErrorRequestBodyInvalid, "json unmarshal failed")
 	}
 

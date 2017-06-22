@@ -8,7 +8,6 @@ import (
 
 	"github.com/eapache/queue"
 	"github.com/sethjback/gobl/keys"
-	"github.com/sethjback/gobl/util/log"
 	"github.com/sethjback/gowork"
 )
 
@@ -90,7 +89,6 @@ func (n *baseNotifier) Send(note Notification) {
 // infinite channel queue
 // inspired by https://godoc.org/github.com/eapache/channels#InfiniteChannel
 func (n *baseNotifier) manageQs() {
-	log.Info("notifier", "managing queues")
 
 	// signal we are done
 	defer n.waiter.Done()
@@ -141,7 +139,6 @@ func (n *baseNotifier) manageQs() {
 		if n.Stopped() {
 			// closing send will start the shut down process:
 			// it will cause the sending queue to stop and drain
-			log.Debug("notifier", "We are stopped")
 			if send != nil {
 				close(send)
 			}
@@ -165,7 +162,6 @@ func (n *baseNotifier) manageQs() {
 }
 
 func (n *baseNotifier) manageResults() {
-	log.Info("notifier", "managing retry")
 
 	// signal we are done
 	defer n.waiter.Done()
@@ -178,19 +174,16 @@ func (n *baseNotifier) manageResults() {
 			}
 			n.rin <- r.message
 		case Fail:
-			log.Errorf("notifier", "Unable send message to: %s || %s", r.message.note.Host()+"/"+r.message.note.Path(), string(r.message.note.Body()))
+			//TODO: log
 		default:
 			//move on
 		}
 	}
 
-	log.Debug("notifier", "result close, close result in")
-
 	close(n.rin)
 }
 
 func (n *baseNotifier) manageSender() {
-	log.Info("notifier", "managing sender")
 
 	q := gowork.NewQueue(n.config.MaxDepth, n.config.MaxDepth)
 	q.Start(n.config.MaxWorkers)
@@ -205,7 +198,7 @@ func (n *baseNotifier) manageSender() {
 				message: m,
 			})
 		}
-		log.Debug("notifier", "Send Closed, finish")
+
 		q.Finish()
 	}()
 
@@ -215,13 +208,12 @@ func (n *baseNotifier) manageSender() {
 		for r := range q.Results() {
 			n.result <- r.(*Result)
 		}
-		log.Debug("notifier", "results closed. close done")
+
 		close(done)
 	}()
 
 	// wait for the queue to finish
 	<-done
 
-	log.Debug("notifier", "done done, close results")
 	close(n.result)
 }

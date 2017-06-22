@@ -11,7 +11,6 @@ import (
 	"github.com/sethjback/gobl/goblerr"
 	"github.com/sethjback/gobl/model"
 	"github.com/sethjback/gobl/modification"
-	"github.com/sethjback/gobl/util/log"
 )
 
 // Backup defines the paramiters of the work to be done
@@ -30,7 +29,6 @@ func (b Backup) Do() interface{} {
 	imoHash := imohash.NewCustom(24*1024, 3*1024*1024)
 	fileHash, err := imoHash.SumFile(b.File)
 	if err != nil {
-		log.Infof("backupWork", "(%s) hash failed: %s", b.File, err)
 		jf.Error = goblerr.New("unable to hash file", ErrorFileHash, err).Error()
 		jf.State = StateErrors
 		return jf
@@ -40,7 +38,6 @@ func (b Backup) Do() interface{} {
 
 	svrs, err := engine.BuildSavers(b.Engines)
 	if err != nil {
-		log.Infof("backupWork", "build savers failed: %s", err)
 		jf.Error = goblerr.New("unable bulid save engines", ErrorSaveEngines, err).Error()
 		jf.State = StateErrors
 

@@ -2,11 +2,9 @@ package manager
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/sethjback/gobl/email"
 	"github.com/sethjback/gobl/httpapi"
 	"github.com/sethjback/gobl/model"
 )
@@ -78,18 +76,17 @@ func FinishJob(id string) error {
 
 	gDb.SaveJob(*job)
 
-	// Todo: index table for files lookup
+	/*
+		if conf.Email.Configured() {
+			body := "Job Complete: " + job.ID + "\n"
+			body += "Agent: " + job.Agent.Name + "\n"
+			body += "Start: " + job.Meta.Start.String() + "\nEnd: " + job.Meta.End.String() + "\nDuration: " + fmt.Sprintf("%v", job.Meta.End.Sub(job.Meta.Start)) + "\n"
+			body += "Message: " + job.Meta.Message + "\n\n"
+			body += "Job Definition: " + fmt.Sprintf("%+v", job.Definition)
 
-	if conf.Email.Configured() {
-		body := "Job Complete: " + job.ID + "\n"
-		body += "Agent: " + job.Agent.Name + "\n"
-		body += "Start: " + job.Meta.Start.String() + "\nEnd: " + job.Meta.End.String() + "\nDuration: " + fmt.Sprintf("%v", job.Meta.End.Sub(job.Meta.Start)) + "\n"
-		body += "Message: " + job.Meta.Message + "\n\n"
-		body += "Job Definition: " + fmt.Sprintf("%+v", job.Definition)
-
-		email.SendEmail(conf.Email, body, "Job Report: "+job.ID)
-	}
-
+			email.SendEmail(conf.Email, body, "Job Report: "+job.ID)
+		}
+	*/
 	return nil
 }
 

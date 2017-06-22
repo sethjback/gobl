@@ -3,63 +3,65 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
 
-	"github.com/sethjback/gobl/auth"
 	"github.com/sethjback/gobl/config"
 	"github.com/sethjback/gobl/coordinator/apihandler"
+	"github.com/sethjback/gobl/coordinator/grpc"
 	"github.com/sethjback/gobl/coordinator/manager"
-	"github.com/sethjback/gobl/gobldb/leveldb"
+	"github.com/sethjback/gobl/email"
+	"github.com/sethjback/gobl/gobldb"
 	"github.com/sethjback/gobl/httpapi"
-	"github.com/sethjback/gobl/model"
-	"github.com/sethjback/gobl/util/log"
-	"github.com/sethjback/gobl/version"
 )
 
 func main() {
 
-	var cPath, admin string
-
-	flag.StringVar(&cPath, "config", "", "Path to the config file")
-	flag.StringVar(&admin, "admin", "", "Set the admin password")
+	var configPath string
+	flag.StringVar(&configPath, "config", "", "path to the config file")
 	flag.Parse()
 
-	conf, err := config.Parse(cPath)
+	cMap, err := config.Map(configPath)
 	if err != nil {
-		fmt.Println("Error parsing config file:", err)
-		os.Exit(1)
+		fmt.Printf("error with config: %v", err)
 	}
 
-	log.Init(conf.Log)
-	log.Infof("main", "coordinator starting. Version: %s", version.Version.String())
-	log.Debug("main", "config:", *conf)
+	cs := config.New()
 
-	if admin != "" {
-		gDb, err := leveldb.New(conf.DB)
-		if err != nil {
-			log.Fatalf("main", "Error creating admin user: %v", err)
-		}
-
-		p, err := auth.PasswordHash([]byte(admin))
-		if err != nil {
-			log.Fatalf("main", "Error creating admin user: %v", err)
-		}
-
-		err = gDb.SaveUser(model.User{Email: "admin", Password: string(p)})
-		if err != nil {
-			log.Fatalf("main", "Error creating admin user: %v", err)
-		}
-		gDb.Close()
-	}
-
-	err = manager.Init(conf)
+	err = gobldb.SaveConfig(cs, cMap)
 	if err != nil {
-		log.Fatalf("main", "Error initializing manager: %v", err)
+		fmt.Printf("Error configuring DB: %v", err)
 	}
+
+	err = email.SaveConfig(cs, cMap)
+	if err != nil {
+		fmt.Printf("Error configuring email: %v", err)
+	}
+
+	err = httpapi.SaveConfig(cs, cMap)
+	if err != nil {
+		fmt.Printf("Error configuring api server: %v", err)
+	}
+
+	err = grpc.SaveConfig(cs, cMap)
+	if err != nil {
+		fmt.Printf("Error configuring grpc server: %v", err)
+	}
+
+	err = manager.Init(cs)
+	if err != nil {
+		fmt.Printf("Error initializing manager: %v", err)
+	}
+
+	gs, err := grpc.New(cs)
+	if err != nil {
+		fmt.Printf("Error starting grpc server: %v", err)
+	}
+
+	go gs.StartServer()
 
 	httpAPI := httpapi.New(apihandler.Routes)
-	httpAPI.Start(conf.Server, func() {
-		log.Infof("main", "shutting down")
+	httpAPI.Start(cs, func() {
+		fmt.Println("Shutting Down")
 		manager.Shutdown()
+		gs.StopServer()
 	})
 }

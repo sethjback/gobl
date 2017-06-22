@@ -4,14 +4,16 @@ import (
 	"errors"
 	"strconv"
 	"time"
+)
 
-	"github.com/sethjback/gobl/gobldb"
+const (
+	QueryDateFormat = "2006-01-02 15:04"
 )
 
 func parseDate(date string) (int, error) {
 
 	//attempt to parseDate
-	t, err := time.Parse(gobldb.QueryDateFormat, date)
+	t, err := time.Parse(QueryDateFormat, date)
 	if err == nil {
 		return int(t.Unix()), nil
 	}

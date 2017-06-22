@@ -4,24 +4,23 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sethjback/gobl/agent/coordinator"
 	"github.com/sethjback/gobl/agent/notification"
 	"github.com/sethjback/gobl/agent/work"
-	"github.com/sethjback/gobl/config"
 	"github.com/sethjback/gobl/model"
-	"github.com/sethjback/gobl/util/log"
 	"github.com/sethjback/gowork"
 )
 
 type Restore struct {
 	stateM      *sync.Mutex
 	Job         model.Job
-	Coordinator config.Coordinator
+	Coordinator *coordinator.Coordinator
 	cancel      chan struct{}
 	MaxWorkers  int
 	Notifier    notification.Notifier
 }
 
-func NewRestore(job model.Job, coordinator config.Coordinator, notifier notification.Notifier) (*Restore, error) {
+func NewRestore(job model.Job, coordinator *coordinator.Coordinator, notifier notification.Notifier) (*Restore, error) {
 	return &Restore{
 		stateM:      &sync.Mutex{},
 		Job:         job,
@@ -41,7 +40,6 @@ func (r *Restore) Status() model.JobMeta {
 
 // Cancel for jobber interface
 func (r *Restore) Cancel() {
-	log.Infof("job", "Cancel restore: %v", r.Job.ID)
 	r.stateM.Lock()
 	r.Job.Meta.State = model.StateCanceling
 	close(r.cancel)
@@ -74,9 +72,6 @@ func (r *Restore) addComplete(num int) {
 }
 
 func (r *Restore) Run(finished chan<- string) {
-	log.Infof("restoreJob", "running restorJob: %v", r.Job.ID)
-	log.Debugf("restoreJob", "Restore Job: %v", *r)
-
 	r.SetState(model.StateRunning)
 	r.cancel = make(chan struct{})
 	r.Job.Meta.Start = time.Now()
@@ -107,7 +102,7 @@ func (r *Restore) Run(finished chan<- string) {
 			}
 			r.addComplete(processedFiles)
 		}
-		log.Debug("restoreJob", "q results closed")
+
 		close(done)
 	}()
 
@@ -121,7 +116,6 @@ func (r *Restore) Run(finished chan<- string) {
 		//finished!
 	}
 
-	log.Debug("restoreJob", "sending finish")
 	r.Notifier.Send(&JobNotification{host: r.Coordinator.Address, path: "/jobs/" + r.Job.ID + "/complete"})
 
 	// notify our manager that we are done

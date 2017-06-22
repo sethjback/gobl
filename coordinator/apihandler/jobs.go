@@ -89,20 +89,6 @@ func addJobFile(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
 	return httpapi.Response{HTTPCode: 201}
 }
 
-func finishJob(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
-	id, err := uuid.Parse(ps.ByName("id"))
-	if err != nil {
-		return httpapi.Response{Error: errors.New("Invalid job id"), HTTPCode: 400}
-	}
-
-	err = manager.FinishJob(id.String())
-	if err != nil {
-		return httpapi.Response{Error: err, HTTPCode: 400}
-	}
-
-	return httpapi.Response{HTTPCode: 200}
-}
-
 func newJob(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
 	var jr JobRequest
 	gerr := r.JsonBody(&jr)

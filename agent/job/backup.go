@@ -7,24 +7,23 @@ import (
 	"sync"
 	"time"
 
+	"github.com/sethjback/gobl/agent/coordinator"
 	"github.com/sethjback/gobl/agent/notification"
 	"github.com/sethjback/gobl/agent/work"
-	"github.com/sethjback/gobl/config"
 	"github.com/sethjback/gobl/model"
-	"github.com/sethjback/gobl/util/log"
 	"github.com/sethjback/gowork"
 )
 
 type Backup struct {
 	stateM      *sync.Mutex
 	Job         model.Job
-	Coordinator config.Coordinator
+	Coordinator *coordinator.Coordinator
 	cancel      chan struct{}
 	MaxWorkers  int
 	Notifier    notification.Notifier
 }
 
-func NewBackup(job model.Job, coordinator config.Coordinator, notifier notification.Notifier) (*Backup, error) {
+func NewBackup(job model.Job, coordinator *coordinator.Coordinator, notifier notification.Notifier) (*Backup, error) {
 	job.Meta = &model.JobMeta{}
 	return &Backup{
 		stateM:      &sync.Mutex{},
@@ -45,7 +44,6 @@ func (b *Backup) Status() model.JobMeta {
 
 // Cancel for jobber interface
 func (b *Backup) Cancel() {
-	log.Infof("job", "Canceling backup: %v", b.Job.ID)
 	b.stateM.Lock()
 	b.Job.Meta.State = model.StateCanceling
 	close(b.cancel)
@@ -79,9 +77,6 @@ func (b *Backup) addComplete(num int) {
 
 // Run for jobber interface
 func (b *Backup) Run(finished chan<- string) {
-	log.Infof("backupJob", "running backupJob: %v", b.Job.ID)
-	log.Debugf("backupJob", "Backup Job: %v", *b)
-
 	b.SetState(model.StateRunning)
 	b.cancel = make(chan struct{})
 	b.Job.Meta.Start = time.Now()
@@ -103,7 +98,6 @@ func (b *Backup) Run(finished chan<- string) {
 		}
 		b.addTotal(totalFiles)
 		// close the input channel into the work queue
-		log.Debug("backupJob", "paths closed")
 		q.Finish()
 	}()
 
@@ -122,7 +116,6 @@ func (b *Backup) Run(finished chan<- string) {
 			}
 			b.addComplete(processedFiles)
 		}
-		log.Debug("backupJob", "q results closed")
 		close(done)
 	}()
 
@@ -142,7 +135,6 @@ func (b *Backup) Run(finished chan<- string) {
 		//finished!
 	}
 
-	log.Debug("backupJob", "sending finish")
 	b.Notifier.Send(&JobNotification{host: b.Coordinator.Address, path: "/jobs/" + b.Job.ID + "/complete"})
 
 	// notify our manager that we are done
@@ -159,15 +151,10 @@ func buildBackupFileList(cancel <-chan struct{}, paths []model.Path) (<-chan str
 	errc := make(chan error, 1)
 
 	go func() {
-		log.Debug("backupJob", "file list routine started")
 
 		for _, path := range paths {
 
-			log.Debugf("backupJob", "Walking filepath: %v", path)
-
 			errc <- filepath.Walk(path.Root, func(filePath string, info os.FileInfo, err error) error {
-
-				log.Debugf("backupJob", "Walk Found: %v", filePath)
 
 				if err != nil {
 					return err
@@ -184,13 +171,13 @@ func buildBackupFileList(cancel <-chan struct{}, paths []model.Path) (<-chan str
 				select {
 				case files <- filePath:
 				case <-cancel:
-					log.Info("backupJob", "Walk Canceled")
+
 					return errors.New("Walk Canceled")
 				}
 				return nil
 			})
 		}
-		log.Debug("backupJob", "file list routine finished")
+
 		close(files)
 		close(errc)
 	}()

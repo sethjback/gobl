@@ -10,18 +10,15 @@ import (
 	"testing"
 	"time"
 
-	"github.com/sethjback/gobl/config"
 	"github.com/sethjback/gobl/engine"
 	"github.com/sethjback/gobl/files"
 	"github.com/sethjback/gobl/model"
 	"github.com/sethjback/gobl/modification"
-	"github.com/sethjback/gobl/util/log"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestRestore(t *testing.T) {
 	assert := assert.New(t)
-	log.Init(config.Log{Level: log.Level.Warn})
 
 	// read data and compress
 	data, err := ioutil.ReadFile("restore.go")

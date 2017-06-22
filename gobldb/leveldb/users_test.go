@@ -3,15 +3,12 @@ package leveldb
 import (
 	"testing"
 
-	"github.com/sethjback/gobl/config"
 	"github.com/sethjback/gobl/model"
-	"github.com/sethjback/gobl/util/log"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestUsers(t *testing.T) {
 	assert := assert.New(t)
-	log.Init(config.Log{Level: log.Level.Error})
 	s, err := testDB()
 	if !assert.Nil(err) {
 		return

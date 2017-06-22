@@ -6,7 +6,6 @@ import (
 	"github.com/sethjback/gobl/gobldb/errors"
 	"github.com/sethjback/gobl/goblerr"
 	"github.com/sethjback/gobl/model"
-	"github.com/sethjback/gobl/util/log"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
 )
@@ -48,7 +47,6 @@ func (l *Leveldb) UserList() ([]model.User, error) {
 		var u model.User
 		err := json.Unmarshal(iter.Value(), &u)
 		if err != nil {
-			log.Errorf("leveldb", "Unable to unmarshal user: %+v", err)
 			continue
 		}
 		ulist = append(ulist, u)

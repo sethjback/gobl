@@ -1,0 +1,6 @@
+DB_DRIVER=leveldb
+
+HOST_CERT=Coordinator.crt
+HOST_KEY=Coordinator.key
+CA_CERT=CA.crt
+GRPC_LISTEN=127.0.0.1:50002

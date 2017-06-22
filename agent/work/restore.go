@@ -8,7 +8,6 @@ import (
 	"github.com/sethjback/gobl/goblerr"
 	"github.com/sethjback/gobl/model"
 	"github.com/sethjback/gobl/modification"
-	"github.com/sethjback/gobl/util/log"
 )
 
 // Restore defines the paramiters of the work to be done
@@ -21,7 +20,6 @@ type Restore struct {
 
 // Worker interface
 func (r Restore) Do() interface{} {
-	log.Debugf("restoreWorker", "Working on: %v", r.File.Signature.Path)
 	jf := model.JobFile{}
 	jf.File = r.File
 
@@ -42,7 +40,6 @@ func (r Restore) Do() interface{} {
 
 	rers, err := engine.BuildRestorers(r.To)
 	if err != nil {
-		log.Infof("restore", "build to failed: %s", err)
 		jf.Error = goblerr.New("unable to build to engines", ErrorRestoreEngines, err).Error()
 		jf.State = StateErrors
 
@@ -83,7 +80,6 @@ func (r Restore) Do() interface{} {
 		jf.Error = goblerr.New("file restore failed", ErrorRestore, err).Error()
 		jf.State = StateErrors
 	case <-done:
-		log.Debugf("restoreWorker", "Restore Done: %v", r.File.Path)
 		jf.State = StateComplete
 	}
 

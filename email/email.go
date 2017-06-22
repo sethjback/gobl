@@ -7,17 +7,67 @@ import (
 	"net"
 	"net/smtp"
 	"net/url"
+	"strings"
 
 	"github.com/sethjback/gobl/config"
-	"github.com/sethjback/gobl/util/log"
 )
 
+type key int
+
+const Config key = 0
+
+type emailConfig struct {
+	To             string
+	From           string
+	SubjectPrefix  string
+	Server         string
+	User           string
+	Password       string
+	Authentication bool
+}
+
+func SaveConfig(cs config.Store, env map[string]string) error {
+	ec := &emailConfig{}
+	for k, v := range env {
+		switch k {
+		case "EMAIL_TO":
+			ec.To = v
+		case "EMAIL_FROM":
+			ec.From = v
+		case "EMAIL_SUBJECT":
+			ec.SubjectPrefix = v
+		case "EMAIL_USER":
+			ec.User = v
+		case "EMAIL_PASSWORD":
+			ec.Password = v
+		case "EMAIL_AUTH":
+			ec.Authentication = strings.Contains(v, "true")
+		case "EMAIL_SERVER":
+			ec.Server = v
+		}
+	}
+
+	cs.Add(Config, ec)
+	return nil
+}
+
+func configFromStore(cs config.Store) *emailConfig {
+	if ec, ok := cs.Get(Config); ok {
+		return ec.(*emailConfig)
+	}
+	return nil
+}
+
 // SendEmail sends an email
-func SendEmail(conf config.Email, body string, subject string) error {
+func SendEmail(cs config.Store, body string, subject string) error {
+	conf := configFromStore(cs)
+	if conf == nil {
+		return errors.New("No email config")
+	}
 	headers := make(map[string]string)
 	headers["From"] = conf.From
 	headers["To"] = conf.To
-	headers["Subject"] = conf.Subject + " " + subject
+	headers["Subject"] = conf.SubjectPrefix + " " + subject
 
 	message := ""
 	for k, v := range headers {
@@ -29,8 +79,6 @@ func SendEmail(conf config.Email, body string, subject string) error {
 	if err != nil {
 		return err
 	}
-
-	log.Debugf("emailer", "URL: %+v", *connURL)
 
 	host, _, err := net.SplitHostPort(connURL.Host)
 	if err != nil {
@@ -57,20 +105,17 @@ func SendEmail(conf config.Email, body string, subject string) error {
 	if connURL.Scheme == "tls" {
 		conn, err = tls.Dial("tcp", connURL.Host, tlsconfig)
 		if err != nil {
-			log.Debugf("emailer", "error with dial %v", err)
 			return err
 		}
 	} else {
 		conn, err = net.Dial("tcp", connURL.Host)
 		if err != nil {
-			log.Debugf("emailer", "error with dial %v", err)
 			return err
 		}
 	}
 
 	c, err := smtp.NewClient(conn, host)
 	if err != nil {
-		log.Debugf("emailer", "error with smtp.NewClient %v", err)
 		return err
 	}
 	defer c.Close()
@@ -84,7 +129,6 @@ func SendEmail(conf config.Email, body string, subject string) error {
 	// Auth
 	if a != nil {
 		if err = c.Auth(a); err != nil {
-			log.Debugf("emailer", "error with smtp.auth %v", err)
 			return err
 		}
 	}

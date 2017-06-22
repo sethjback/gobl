@@ -1,0 +1,123 @@
+syntax = "proto3";
+
+package goblgrpc;
+
+service Agent {
+  // Backup starts a backup job on the agent
+  // this call should validate, configure, then start the job
+  // agents can assume the job has been successfully create in the Coordinator
+  // and thus all calls back to Backup Job related Coordinator endpoints will succeed.
+  rpc Backup(JobDefinition) returns (ReturnMessage) {}
+
+  // Restore starts a restore job.
+  // this job should validate and configure the job. A success return from this call
+  // guarantees any Restore Job related calls from the Coordinator will succeed.
+  rpc Restore(JobDefinition) returns (ReturnMessage) {}
+
+  // RestoreFile streams the individual files to restore
+  // the Coordinator will stream individual file signatures previously recorded
+  // from a backup job. The agent should queue these requests and run the restores
+  // in parallel according to the job definition.
+  rpc RestoreFile(stream FileRequest) returns (ReturnMessage) {}
+
+  // Terminate the job
+  // agents should gracefully terminate any work currently associated with the job
+  // before returning. Any queues dealing with outstanding work should be emptied,
+  // but ongoing notification about already complete files
+  // (i.e. calls to the Coordinator File call) should continue until acknowledged.
+  rpc Cancel(JobDefinition) returns (ReturnMessage) {}
+}
+
+service Coordinator {
+  // File accepts data about completed job files
+  // FileRequests sent in this call should only represent files that have been completed
+  // e.g. completely backed up or restored.
+  rpc File(stream FileRequest) returns (ReturnMessage) {}
+
+  // Finish indicates all work for the particular job definition has been completed
+  // by the agent. Any additional calls related to the particular definition will fail
+  rpc Finish(JobDefinition) returns (ReturnMessage) {}
+}
+
+message ReturnMessage {
+  // message holds information about the call and detailed error information if there was a problem
+  string message = 1;
+
+  // code for the particular call
+  string code = 2;
+}
+
+// JobDefinition contains all the data necessary to start a job
+message JobDefinition {
+  // id of the job
+  string id = 1;
+
+  // to is the array of datasinks (engines)
+  repeated MEDefinition to = 2;
+
+  // from is only used as the engine source for restores
+  MEDefinition from = 3;
+
+  // modifications to apply to the data stream before saving
+  repeated MEDefinition modifications = 4;
+
+  // paths to backup
+  repeated Path paths = 5;
+}
+
+// Path represents a location on the target file system to backup
+message Path {
+  // this is the root of the path
+  string root = 1;
+
+  // exclusion patters to apply when traversing root
+  repeated string excludes = 2;
+}
+
+
+// MEDefinition are configuration options for Mods and Engines
+message MEDefinition {
+  // name of the Mod or Engine
+  string name = 1;
+
+  // options
+  repeated Option options = 2;
+}
+
+// Option used to configure engines and modifiers
+message Option {
+  // name of the option
+  string name = 1;
+
+  // value
+  string value = 2;
+}
+
+
+message FileRequest {
+  string jobId = 1;
+
+  File file  = 2;
+}
+
+message File {
+  Signature signature = 1;
+
+  Meta meta = 2;
+}
+
+message Signature {
+  string path = 1;
+
+  string hash = 2;
+
+  repeated string modifications = 3;
+}
+
+message Meta {
+  uint32 mode = 1;
+
+  int32 uid = 2;
+
+  int32 gid = 3;
+}

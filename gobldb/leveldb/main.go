@@ -1,13 +1,18 @@
 package leveldb
 
 import (
+	"errors"
+
 	"github.com/sethjback/gobl/config"
-	"github.com/sethjback/gobl/util/log"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/filter"
 	"github.com/syndtr/goleveldb/leveldb/opt"
 	"github.com/syndtr/goleveldb/leveldb/storage"
 )
+
+type key int
+
+const Config key = 0
 
 const (
 	keyTypeAgent         = "ag-"
@@ -24,7 +29,53 @@ type Leveldb struct {
 	Connection *leveldb.DB
 }
 
-func New(options config.DB) (*Leveldb, error) {
+type dbConfig struct {
+	path string
+}
+
+func (l *Leveldb) SaveConfig(cs config.Store, env map[string]string) error {
+	dbc := &dbConfig{}
+	for k, v := range env {
+		switch k {
+		case "DB_PATH":
+			dbc.path = v
+		}
+	}
+
+	cs.Add(Config, dbc)
+
+	return nil
+}
+
+func configFromStore(cs config.Store) *dbConfig {
+	if dbc, ok := cs.Get(Config); ok {
+		return dbc.(*dbConfig)
+	}
+	return nil
+}
+
+func (l *Leveldb) Init(cs config.Store) error {
+	dbc := configFromStore(cs)
+	if dbc == nil {
+		return errors.New("Unable to find leveldb config")
+	}
+
+	o := &opt.Options{
+		Filter: filter.NewBloomFilter(10),
+	}
+
+	var err error
+
+	if len(dbc.path) == 0 {
+		l.Connection, err = leveldb.Open(storage.NewMemStorage(), o)
+	} else {
+		l.Connection, err = leveldb.OpenFile(dbc.path, o)
+	}
+
+	return err
+}
+
+func New(path string) (*Leveldb, error) {
 	l := &Leveldb{}
 	o := &opt.Options{
 		Filter: filter.NewBloomFilter(10),
@@ -32,11 +83,10 @@ func New(options config.DB) (*Leveldb, error) {
 
 	var err error
 
-	if len(options.Path) == 0 {
-		log.Warn("leveldb", "DB Path empty, this will create in-memory db: probably not what you wanted!")
+	if len(path) == 0 {
 		l.Connection, err = leveldb.Open(storage.NewMemStorage(), o)
 	} else {
-		l.Connection, err = leveldb.OpenFile(options.Path, o)
+		l.Connection, err = leveldb.OpenFile(path, o)
 	}
 
 	return l, err

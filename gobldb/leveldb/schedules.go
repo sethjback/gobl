@@ -6,7 +6,6 @@ import (
 	"github.com/sethjback/gobl/gobldb/errors"
 	"github.com/sethjback/gobl/goblerr"
 	"github.com/sethjback/gobl/model"
-	"github.com/sethjback/gobl/util/log"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
 )
@@ -56,7 +55,6 @@ func (l *Leveldb) ScheduleList() ([]model.Schedule, error) {
 		var s model.Schedule
 		err := json.Unmarshal(iter.Value(), &s)
 		if err != nil {
-			log.Errorf("leveldb", "Unable to unmarshal schedule: %+v", err)
 			continue
 		}
 		slist = append(slist, s)

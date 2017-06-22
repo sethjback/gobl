@@ -6,7 +6,6 @@ import (
 	"github.com/sethjback/gobl/gobldb/errors"
 	"github.com/sethjback/gobl/goblerr"
 	"github.com/sethjback/gobl/model"
-	"github.com/sethjback/gobl/util/log"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
 )
@@ -56,7 +55,6 @@ func (l *Leveldb) JobDefinitionList() ([]model.JobDefinition, error) {
 		var jd model.JobDefinition
 		err := json.Unmarshal(iter.Value(), &jd)
 		if err != nil {
-			log.Errorf("leveldb", "Unable to unmarshal job definition: %+v", err)
 			continue
 		}
 		jdlist = append(jdlist, jd)

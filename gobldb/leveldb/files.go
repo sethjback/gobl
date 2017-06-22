@@ -7,7 +7,6 @@ import (
 	"github.com/sethjback/gobl/gobldb/errors"
 	"github.com/sethjback/gobl/goblerr"
 	"github.com/sethjback/gobl/model"
-	"github.com/sethjback/gobl/util/log"
 	"github.com/syndtr/goleveldb/leveldb"
 )
 
@@ -111,7 +110,7 @@ func (l *Leveldb) jobFileCount(jobID string, filters map[string]string) (int, er
 					}
 					count++
 				} else {
-					log.Errorf("leveldb", "JobFileList: Unable to get file for index: %s", iv)
+
 				}
 			}
 		} else {
@@ -165,7 +164,7 @@ func (l *Leveldb) JobFileList(jobID string, filters map[string]string) ([]model.
 				}
 				jf = append(jf, *f)
 			} else {
-				log.Errorf("leveldb", "JobFileList: Unable to get file for index: %s", iv)
+
 			}
 		}
 
@@ -180,7 +179,7 @@ func (l *Leveldb) JobFileList(jobID string, filters map[string]string) ([]model.
 			if err == nil {
 				jf = append(jf, *f)
 			} else {
-				log.Errorf("leveldb", "JobFileList: Unable to get file for index: %s", iv)
+
 			}
 		}
 	}

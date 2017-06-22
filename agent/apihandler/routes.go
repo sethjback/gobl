@@ -10,11 +10,6 @@ var Routes = []httpapi.Route{
 		Path:    "/status",
 		Handler: agentStatus,
 	},
-	httpapi.Route{
-		Method:  "GET",
-		Path:    "/key",
-		Handler: agentKey,
-	},
 
 	// Jobs
 	httpapi.Route{

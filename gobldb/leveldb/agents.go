@@ -6,7 +6,6 @@ import (
 	"github.com/sethjback/gobl/gobldb/errors"
 	"github.com/sethjback/gobl/goblerr"
 	"github.com/sethjback/gobl/model"
-	"github.com/sethjback/gobl/util/log"
 	"github.com/syndtr/goleveldb/leveldb"
 	"github.com/syndtr/goleveldb/leveldb/util"
 )
@@ -48,7 +47,6 @@ func (l *Leveldb) AgentList() ([]model.Agent, error) {
 		var a model.Agent
 		err := json.Unmarshal(iter.Value(), &a)
 		if err != nil {
-			log.Errorf("leveldb", "Unable to unmarshal agent: %+v", err)
 			continue
 		}
 		alist = append(alist, a)

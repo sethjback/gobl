@@ -77,7 +77,7 @@ func (n Normalize) ServeHTTP(rw http.ResponseWriter, r *http.Request, next http.
 	req.Path = r.URL.Path
 
 	ctx := r.Context()
-	next(rw, r.WithContext(context.WithValue(ctx, request, req)))
+	next(rw, r.WithContext(context.WithValue(ctx, requestKey, req)))
 }
 
 func validateTimestamp(timestamp string) (int, error) {

@@ -5,20 +5,18 @@ import (
 	"testing"
 
 	"github.com/sethjback/gobl/config"
-	"github.com/sethjback/gobl/util/log"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestMain(t *testing.T) {
 	assert := assert.New(t)
-	log.Init(config.Log{Level: log.Level.Error})
 
-	l, err := New(config.DB{Path: ""})
+	l, err := New("")
 
 	assert.Nil(err)
 	assert.Nil(l.Close())
 
-	l, err = New(config.DB{Path: "./test.ldb"})
+	l, err = New("./test.ldb")
 
 	assert.Nil(err)
 	assert.Nil(l.Close())
@@ -29,5 +27,27 @@ func TestMain(t *testing.T) {
 }
 
 func testDB() (*Leveldb, error) {
-	return New(config.DB{Path: ""})
+	return New("")
+}
+
+func TestSaveConfig(t *testing.T) {
+	assert := assert.New(t)
+
+	cs := config.New()
+	l := &Leveldb{}
+
+	assert.Nil(l.SaveConfig(cs, map[string]string{"DB_PATH": "./test"}))
+
+	dbc := configFromStore(cs)
+	if assert.NotNil(dbc) {
+		assert.Equal("./test", dbc.path)
+	}
+
+	assert.Nil(l.SaveConfig(cs, map[string]string{}))
+
+	dbc = configFromStore(cs)
+	if assert.NotNil(dbc) {
+		assert.Empty(dbc.path)
+	}
+
 }

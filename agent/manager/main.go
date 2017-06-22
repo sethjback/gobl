@@ -3,17 +3,15 @@
 package manager
 
 import (
-	"crypto/rsa"
 	"runtime"
 	"sync"
 
+	"github.com/sethjback/gobl/agent/coordinator"
 	"github.com/sethjback/gobl/agent/job"
 	"github.com/sethjback/gobl/agent/notification"
 	"github.com/sethjback/gobl/config"
 	"github.com/sethjback/gobl/goblerr"
-	"github.com/sethjback/gobl/keys"
 	"github.com/sethjback/gobl/model"
-	"github.com/sethjback/gobl/util/log"
 )
 
 const (
@@ -26,24 +24,13 @@ const (
 var active = make(map[string]job.Jobber)
 var jobMutex sync.Mutex
 var stateMutex sync.Mutex
-var conf *config.Config
+var conf config.Store
 var notifier notification.Notifier
 var finish chan string
 var running bool
-var akey *rsa.PrivateKey
 
 // Init configures the manager
-func Init(c *config.Config) error {
-	conf = c
-	var err error
-
-	akey, err = keys.OpenPrivateKey(conf.Server.PrivateKey)
-	if err != nil {
-		return err
-	}
-
-	notifier = notification.New(&notification.Config{MaxWorkers: 3, MaxDepth: 6}, akey)
-	notifier.Start()
+func Init(c config.Store) error {
 
 	finish = make(chan string)
 	running = true
@@ -83,7 +70,7 @@ func Status() map[string]interface{} {
 
 // NewRestore creates and starts a new restore job
 func NewRestore(restoreJob model.Job) error {
-	r, err := job.NewRestore(restoreJob, conf.Coordinator, notifier)
+	r, err := job.NewRestore(restoreJob, coordinator.FromConfig(conf), notifier)
 	if err != nil {
 		return goblerr.New("Unable to create job", ErrorCreateJob, err)
 	}
@@ -96,7 +83,7 @@ func NewRestore(restoreJob model.Job) error {
 
 // NewBackup creates a new Job worker and starts
 func NewBackup(backupJob model.Job) error {
-	b, err := job.NewBackup(backupJob, conf.Coordinator, notifier)
+	b, err := job.NewBackup(backupJob, coordinator.FromConfig(conf), notifier)
 	if err != nil {
 		return goblerr.New("Unable to create job", ErrorCreateJob, err)
 	}
@@ -122,7 +109,6 @@ func Cancel(id string) error {
 func waiter() {
 	defer close(finish)
 	for id := range finish {
-		log.Infof("manager", "Job Finished: %v", id)
 		removeJob(id)
 		if stopped() && len(jobIds()) == 0 {
 			return
@@ -172,13 +158,4 @@ func jobIds() []string {
 	}
 	jobMutex.Unlock()
 	return ids
-}
-
-func Key() (string, error) {
-	pks, err := keys.PublicKey(akey)
-	if err != nil {
-		return "", goblerr.New("Unable to open key", ErrorDecodeKey, err)
-	}
-
-	return pks, nil
 }

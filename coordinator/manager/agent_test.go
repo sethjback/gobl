@@ -9,10 +9,8 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/sethjback/gobl/config"
 	"github.com/sethjback/gobl/keys"
 	"github.com/sethjback/gobl/model"
-	"github.com/sethjback/gobl/util/log"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -46,8 +44,6 @@ l4c9e94mec2bPMhzrDILgtWCTzoShttvG/jR3sSZb3mxYySIHs6Ahw==
 
 func TestGetAgentKey(t *testing.T) {
 	assert := assert.New(t)
-
-	log.Init(config.Log{Level: log.Level.Warn})
 
 	pkb, _ := pem.Decode(testPrivateKey)
 	pk, err := x509.ParsePKCS1PrivateKey(pkb.Bytes)

@@ -4,7 +4,6 @@ import (
 	"github.com/google/uuid"
 	"github.com/robfig/cron"
 	"github.com/sethjback/gobl/model"
-	"github.com/sethjback/gobl/util/log"
 )
 
 // Implements
@@ -15,21 +14,19 @@ type ScheduledJob struct {
 func (s *ScheduledJob) Run() {
 	jdef, err := gDb.GetJobDefinition(s.Schedule.JobDefinitionID)
 	if err != nil {
-		log.Errorf("scheduler", "Could not job definition for schedule %+v. Error: %v", *s, err)
+		//TODO: log
 	}
 
 	a, err := gDb.GetAgent(s.Schedule.AgentID)
 	if err != nil {
-		log.Errorf("scheduler", "Could not find agent for schedule %+v. Error: %v", *s, err)
+		//TODO: log
 	}
 
-	jID, err := NewJob(*jdef, a.ID)
+	_, err = NewJob(*jdef, a.ID)
 
 	if err != nil {
-		log.Errorf("scheduler", "Could not run scheduled job: %v. Error: %v", *s, err)
+		//TODO: log
 	}
-
-	log.Infof("scheduler", "Scheduled Job started. ID: %v", jID)
 }
 
 func NewSchedule(s model.Schedule) (string, error) {

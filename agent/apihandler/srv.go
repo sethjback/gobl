@@ -18,12 +18,3 @@ func agentStatus(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
 
 	return httpapi.Response{Data: status, HTTPCode: 200}
 }
-
-func agentKey(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
-	key, err := manager.Key()
-	if err != nil {
-		return httpapi.Response{Error: err, HTTPCode: 500}
-	}
-
-	return httpapi.Response{Data: map[string]interface{}{"keyString": key}, HTTPCode: 200}
-}
