@@ -17,10 +17,10 @@ func TestAgents(t *testing.T) {
 	}
 	defer s.Close()
 	a := model.Agent{
-		ID:        uuid.New().String(),
-		Name:      "Test Agent 1",
-		Address:   "127.0.0.1:8080",
-		PublicKey: "asdfasdfasdf",
+		ID:      uuid.New().String(),
+		Name:    "Test Agent 1",
+		Address: "127.0.0.1:8080",
+		Key:     &model.Key{Key: "asdf", Certificate: "asdf"},
 	}
 
 	err = s.SaveAgent(a)
@@ -32,7 +32,7 @@ func TestAgents(t *testing.T) {
 
 	a.Name = "Different"
 	a.Address = "1.1.1.1:8123"
-	a.PublicKey = ""
+	a.Key = nil
 
 	err = s.SaveAgent(a)
 	assert.Nil(err)
@@ -42,22 +42,22 @@ func TestAgents(t *testing.T) {
 	assert.Equal(*a1, a)
 
 	a2 := model.Agent{
-		ID:        uuid.New().String(),
-		Name:      "Test Agent 2",
-		Address:   "127.0.0.1:8080",
-		PublicKey: "asdfasdfasdf",
+		ID:      uuid.New().String(),
+		Name:    "Test Agent 2",
+		Address: "127.0.0.1:8080",
+		Key:     &model.Key{Key: "asdf", Certificate: "asdf"},
 	}
 	a3 := model.Agent{
-		ID:        uuid.New().String(),
-		Name:      "Test Agent 3",
-		Address:   "127.0.0.2:8080",
-		PublicKey: "asdfasdfasdf",
+		ID:      uuid.New().String(),
+		Name:    "Test Agent 3",
+		Address: "127.0.0.2:8080",
+		Key:     &model.Key{Key: "asdf", Certificate: "asdf"},
 	}
 	a4 := model.Agent{
-		ID:        uuid.New().String(),
-		Name:      "Test Agent 4",
-		Address:   "127.0.0.3:8080",
-		PublicKey: "asdfasdfasdf",
+		ID:      uuid.New().String(),
+		Name:    "Test Agent 4",
+		Address: "127.0.0.3:8080",
+		Key:     &model.Key{Key: "asdf", Certificate: "asdf"},
 	}
 
 	err = s.SaveAgent(a2)

@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	"github.com/sethjback/gobl/httpapi"
 	"github.com/sethjback/gobl/model"
 )
 
@@ -20,22 +19,10 @@ func JobStatus(id string) (*model.JobMeta, error) {
 	}
 
 	if j.Meta.State == model.StateRunning || j.Meta.State == model.StateNotification {
-		aR := &httpapi.Request{Host: j.Agent.Address, Path: "/jobs/" + id, Method: "GET"}
-		response, err := aR.Send(signer)
-		if err != nil {
-			return nil, err
-		}
+		// TODO: implement via grpc
 		//todo: update status on our end if the job isn't found on the agent. Likely causes are the agent Shutdown
 		// uncleanly and wasn't able to persist the job
-		if response.Error != nil {
-			return nil, response.Error
-		}
 
-		if jd, ok := response.Data[id]; ok {
-			jobMeta = jd.(*model.JobMeta)
-		} else {
-			rerr = errors.New("Unable to find job on agent")
-		}
 	}
 
 	return jobMeta, rerr
@@ -131,29 +118,9 @@ func NewJob(jobDefinition model.JobDefinition, agentID string) (string, error) {
 		return "", err
 	}
 
-	aR := httpapi.NewRequest(agent.Address, "/jobs", "POST")
-	job.Agent = nil
-	err = aR.SetBody(job)
-	if err != nil {
-		job.Agent = agent
-		job.Meta.State = model.StateFailed
-		job.Meta.End = time.Now().UTC()
-		job.Meta.Message = "Unable to create job on agent: " + err.Error()
-		gDb.SaveJob(job)
-		return "", err
-	}
+	//TODO: implement via grpc
 
-	response, err := aR.Send(signer)
-	if err != nil {
-		job.Agent = agent
-		job.Meta.State = model.StateFailed
-		job.Meta.End = time.Now().UTC()
-		job.Meta.Message = "Unable to create job on agent: " + err.Error()
-		gDb.SaveJob(job)
-		return "", err
-	}
-
-	return job.ID, response.Error
+	return job.ID, nil
 }
 
 func GetJob(jobID string) (*model.Job, error) {

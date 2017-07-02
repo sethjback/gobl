@@ -1,24 +1,15 @@
 package httpapi
 
 import (
-	"bytes"
 	"context"
-	"crypto/sha256"
-	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"sort"
-	"strconv"
-	"strings"
-	"time"
 
 	"github.com/julienschmidt/httprouter"
 	"github.com/sethjback/gobl/goblerr"
-	"github.com/sethjback/gobl/keys"
 )
 
 const (
@@ -64,43 +55,11 @@ func RequestFromContext(ctx context.Context) *Request {
 	return ctx.Value(requestKey).(*Request)
 }
 
-// String returns the request string that is appropriate for signing
-func (r *Request) String() string {
-	uri := strings.ToLower(r.Path)
-	query := queryString(r.Query)
-
-	var body string
-	if r.Body != nil {
-		body = bodyHash(r.Body)
-	} else {
-		body = ""
-	}
-
-	var headers bytes.Buffer
-	headers.WriteString("authorization:" + r.Headers.Get("authorization") + "\n")
-	headers.WriteString(HeaderGoblDate + ":" + r.Headers.Get(HeaderGoblDate))
-
-	return strings.Join([]string{
-		r.Method,
-		r.Host,
-		uri,
-		query,
-		headers.String(),
-		body}, "\n")
-}
-
-func (r *Request) SetBody(body interface{}) error {
-	bbytes, err := json.Marshal(body)
-	if err != nil {
-		return err
-	}
-
-	r.Body = bytes.NewReader(bbytes)
-
-	return nil
-}
-
 func (r *Request) JsonBody(decodeTo interface{}) error {
+	if r.Body == nil {
+		return nil
+	}
+
 	if cType := r.Headers.Get("Content-Type"); cType != "application/json" {
 		return goblerr.New("Body must be valid json", ErrorRequestBodyInvalid, "Content-Type must be application/json")
 	}
@@ -111,164 +70,8 @@ func (r *Request) JsonBody(decodeTo interface{}) error {
 	}
 
 	if err = json.Unmarshal(b, decodeTo); err != nil {
-		return goblerr.New("Body not valid json", ErrorRequestBodyInvalid, "json unmarshal failed")
+		return goblerr.New("Body not valid json", ErrorRequestBodyInvalid, "json unmarshal failed: "+err.Error())
 	}
 
 	return nil
-}
-
-// bodyHash returns the sha256 sum of the body
-func bodyHash(reader io.ReadSeeker) string {
-	hash := sha256.New()
-
-	start, _ := reader.Seek(0, 1)
-	defer reader.Seek(start, 0)
-
-	io.Copy(hash, reader)
-	s := hash.Sum(nil)
-	return hex.EncodeToString(s)
-}
-
-// sorts the query parameters and sends them back in alpha order
-func queryString(values url.Values) string {
-	keys := make([]string, len(values))
-	var buff bytes.Buffer
-	for k := range values {
-		keys = append(keys, k)
-	}
-	sort.Strings(keys)
-
-	l := len(keys)
-	for k, v := range keys {
-		vals := values[v]
-		sort.Strings(vals)
-		l1 := len(vals)
-		for k1, v1 := range vals {
-			buff.WriteString(v + "=" + v1)
-			if k1 != l1-1 {
-				buff.WriteString("&")
-			} else if k != l-1 {
-				buff.WriteString("&")
-			}
-		}
-
-	}
-
-	return buff.String()
-}
-
-func (r *Request) Send(s keys.Signer) (*Response, error) {
-	err := prepAndSign(r, s)
-	if err != nil {
-		return nil, goblerr.New("Unable to sign message", ErrorRequestFailed, err)
-	}
-	switch r.Method {
-	case "POST":
-		return post(r)
-	case "GET":
-		return get(r)
-	}
-	return nil, goblerr.New("Invalid method", ErrorRequestInvalid, "must be POST or GET")
-}
-
-func prepAndSign(r *Request, s keys.Signer) error {
-	if d := r.Headers.Get(HeaderGoblDate); d == "" {
-		r.Headers.Set(HeaderGoblDate, strconv.Itoa(int(time.Now().UTC().Unix())))
-	}
-
-	sig, err := s.Sign([]byte(r.String()))
-
-	if err != nil {
-		return err
-	}
-
-	r.Headers.Set(HeaderGoblSig, sig)
-
-	return nil
-}
-
-// Post a request
-func post(r *Request) (*Response, error) {
-	req, err := http.NewRequest("POST", r.Host+r.Path, r.Body)
-	if err != nil {
-		return nil, goblerr.New("Invalid request", ErrorRequestInvalid, err)
-	}
-
-	req.Header = r.Headers
-	req.Header.Set(HeaderGoblDate, strconv.Itoa(int(time.Now().UTC().Unix())))
-	req.Header.Set("Content-Type", "application/json")
-
-	if r.Client == nil {
-		r.Client = &http.Client{CheckRedirect: checkRedirect}
-	} else {
-		r.Client.CheckRedirect = checkRedirect
-	}
-
-	resp, err := r.Client.Do(req)
-	if err != nil {
-		return nil, goblerr.New("Unable to send request", ErrorRequestFailed, err)
-	}
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, goblerr.New("Unable to read response", ErrorRequestFailed, err)
-	}
-
-	resp.Body.Close()
-
-	var response Response
-
-	if len(body) != 0 {
-		err = json.Unmarshal(body, &response)
-		if err != nil {
-			return nil, goblerr.New("Unable to unmarshal", ErrorRequestFailed, err)
-		}
-	}
-
-	response.HTTPCode = resp.StatusCode
-
-	return &response, nil
-}
-
-// Get a request
-func get(r *Request) (*Response, error) {
-	req, err := http.NewRequest("GET", r.Host+r.Path, nil)
-	if err != nil {
-		return nil, goblerr.New("Invalid request", ErrorRequestInvalid, err)
-	}
-
-	req.Header = r.Headers
-	req.Header.Set(HeaderGoblDate, strconv.Itoa(int(time.Now().UTC().Unix())))
-
-	if r.Client == nil {
-		r.Client = &http.Client{CheckRedirect: checkRedirect}
-	} else {
-		r.Client.CheckRedirect = checkRedirect
-	}
-
-	resp, err := r.Client.Do(req)
-	if err != nil {
-		return nil, goblerr.New("Unable to send request", ErrorRequestFailed, err)
-	}
-
-	body, err := ioutil.ReadAll(resp.Body)
-	if err != nil {
-		return nil, goblerr.New("Unable to read response", ErrorRequestFailed, err)
-	}
-
-	resp.Body.Close()
-
-	var response Response
-	err = json.Unmarshal(body, &response)
-	if err != nil {
-		return nil, goblerr.New("Unable to unmarshal", ErrorRequestFailed, err)
-	}
-	response.HTTPCode = resp.StatusCode
-
-	return &response, nil
-}
-
-// do not allow redirects
-func checkRedirect(req *http.Request, via []*http.Request) error {
-	return errors.New("Redirects not supported")
 }

@@ -49,6 +49,10 @@ type Database interface {
 	UserList() ([]model.User, error)
 	SaveUser(user model.User) error
 	DeleteUser(email string) error
+
+	// Coordinator key
+	GetKey(string) (*model.Key, error)
+	SaveKey(string, model.Key) error
 }
 
 type dbConfig struct {

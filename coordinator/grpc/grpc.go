@@ -2,7 +2,6 @@ package grpc
 
 import (
 	"crypto/tls"
-	"errors"
 	"fmt"
 	"net"
 
@@ -42,11 +41,23 @@ type GRPC struct {
 	clientConn *grpc.ClientConn
 }
 
-func New(cs config.Store) (*GRPC, error) {
+func New(caKey, coordKey model.Key, cs config.Store) (*GRPC, error) {
 	sc := configFromStore(cs)
 	if sc == nil {
-		return nil, goblerr.New("grpc server config missing", ErrorConfigMissing, nil)
+		sc = &grpcConfig{listen: ":50001"}
 	}
+
+	ca, err := certificates.OpenCA(certificates.CertPEM([]byte(caKey.Certificate)))
+	if err != nil {
+		return nil, err
+	}
+	sc.caCert = ca
+
+	coord, err := certificates.OpenHostCertificate(certificates.CertPEM([]byte(coordKey.Certificate)), certificates.CertPEM([]byte(coordKey.Key)))
+	if err != nil {
+		return nil, err
+	}
+	sc.hostCert = coord
 
 	return &GRPC{grpcConfig: sc}, nil
 }
@@ -104,38 +115,11 @@ func (g *GRPC) Client(a *model.Agent) (pb.AgentClient, error) {
 
 func SaveConfig(cs config.Store, env map[string]string) error {
 	sc := &grpcConfig{}
-	hcPath := ""
-	hkPath := ""
-	caPath := ""
 	for k, v := range env {
 		switch k {
 		case "GRPC_LISTEN":
 			sc.listen = v
-		case "HOST_CERT":
-			hcPath = v
-		case "HOST_KEY":
-			hkPath = v
-		case "CA_CERT":
-			caPath = v
 		}
-	}
-
-	if hcPath == "" || hkPath == "" {
-		return errors.New("Must provide host certificate and key")
-	}
-	if caPath == "" {
-		return errors.New("Must provide CA certificate")
-	}
-
-	var err error
-	sc.hostCert, err = certificates.NewHostCertificate(certificates.CertPath(hcPath), certificates.CertPath(hkPath))
-	if err != nil {
-		return err
-	}
-
-	sc.caCert, err = certificates.NewCA(certificates.CertPath(caPath))
-	if err != nil {
-		return err
 	}
 
 	if sc.listen == "" {

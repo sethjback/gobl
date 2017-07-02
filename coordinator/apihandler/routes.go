@@ -39,6 +39,21 @@ var Routes = []httpapi.Route{
 		Handler: updateAgent},
 
 	//
+	// Coordinator
+	//
+	httpapi.Route{
+		Method:  "POST",
+		Path:    "/ca/key",
+		Handler: newCAKey,
+	},
+
+	httpapi.Route{
+		Method:  "GET",
+		Path:    "/ca/certificate",
+		Handler: getCertificate,
+	},
+
+	//
 	//JOBS
 	//
 

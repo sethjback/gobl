@@ -2,17 +2,18 @@ package manager
 
 import (
 	"github.com/robfig/cron"
+	"github.com/sethjback/gobl/certificates"
 	"github.com/sethjback/gobl/config"
+	"github.com/sethjback/gobl/coordinator/grpc"
 	"github.com/sethjback/gobl/email"
 	"github.com/sethjback/gobl/gobldb"
-	"github.com/sethjback/gobl/keys"
 )
 
 var gDb gobldb.Database
 var schedules *cron.Cron
 var conf config.Store
-var signer keys.Signer
-var verifiers map[string]keys.Verifier
+var grpcHup chan struct{}
+var gs *grpc.GRPC
 
 // Init sets up the environement to run
 func Init(c config.Store) error {
@@ -24,9 +25,22 @@ func Init(c config.Store) error {
 
 	conf = c
 
+	grpcHup = make(chan struct{})
+	go func() {
+		for {
+			_, ok := <-grpcHup
+			if !ok {
+				//channel closed, exit
+				break
+			}
+			resetGRPCServer()
+		}
+	}()
+
+	grpcHup <- struct{}{}
+
 	//init existing schedules
 	err = initCron()
-
 	return err
 }
 
@@ -54,6 +68,41 @@ func SendTestEmail() error {
 }
 
 func Shutdown() {
+	if gs != nil {
+		gs.StopServer()
+	}
 	schedules.Stop()
 	gDb.Close()
+	close(grpcHup)
+}
+
+func resetGRPCServer() error {
+	coordKey, _ := gDb.GetKey("Coordinator")
+	caKey, _ := gDb.GetKey("CA")
+	if caKey == nil {
+		if gs != nil {
+			gs.StopServer()
+		}
+	} else {
+		if coordKey == nil {
+			key, err := certificates.NewHostCertificate(*caKey, "Coordinator")
+			if err != nil {
+				return err
+			}
+			coordKey = key
+			gDb.SaveKey("Coordinator", *key)
+		}
+
+		if gs != nil {
+			gs.StopServer()
+		}
+
+		grpcServer, err := grpc.New(*caKey, *coordKey, conf)
+		if err != nil {
+			return err
+		}
+
+		go grpcServer.StartServer()
+	}
+	return nil
 }

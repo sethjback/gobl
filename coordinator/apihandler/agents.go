@@ -86,7 +86,7 @@ func updateAgent(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
 		return httpapi.Response{Error: err, HTTPCode: 400}
 	}
 
-	if err := manager.UpdateAgent(model.Agent{Name: ar.Name, Address: ar.Address, ID: id}, ar.UpdateKey); err != nil {
+	if err := manager.UpdateAgent(model.Agent{Name: ar.Name, Address: ar.Address, ID: id}); err != nil {
 		return httpapi.Response{Error: err, HTTPCode: 400}
 	}
 

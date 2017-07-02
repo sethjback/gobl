@@ -21,10 +21,10 @@ func TestJobs(t *testing.T) {
 	defer s.Close()
 
 	a := model.Agent{
-		ID:        uuid.New().String(),
-		Name:      "Test Agent 1",
-		Address:   "127.0.0.1:8080",
-		PublicKey: "asdfasdfasdf",
+		ID:      uuid.New().String(),
+		Name:    "Test Agent 1",
+		Address: "127.0.0.1:8080",
+		Key:     &model.Key{Key: "asdf", Certificate: "asdf"},
 	}
 
 	err = s.SaveAgent(a)
@@ -80,10 +80,10 @@ func TestJobs(t *testing.T) {
 	}
 
 	a1 := model.Agent{
-		ID:        uuid.New().String(),
-		Name:      "Test Agent 1",
-		Address:   "127.0.0.1:8080",
-		PublicKey: "asdfasdfasdf",
+		ID:      uuid.New().String(),
+		Name:    "Test Agent 1",
+		Address: "127.0.0.1:8080",
+		Key:     &model.Key{Key: "asdf", Certificate: "asdf"},
 	}
 
 	err = s.SaveAgent(a1)

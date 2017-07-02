@@ -23,6 +23,7 @@ const (
 	keyTypeIndex         = "in-"
 	keyTypeShedule       = "sc-"
 	keyTypeUser          = "us-"
+	keyTypeKey           = "Key-"
 )
 
 type Leveldb struct {

@@ -4,8 +4,7 @@ import (
 	"errors"
 
 	"github.com/google/uuid"
-	"github.com/sethjback/gobl/httpapi"
-	"github.com/sethjback/gobl/keys"
+	"github.com/sethjback/gobl/certificates"
 	"github.com/sethjback/gobl/model"
 )
 
@@ -20,24 +19,25 @@ func GetAgents() ([]model.Agent, error) {
 
 // AddAgent simply adds an agent to the system
 func AddAgent(agent model.Agent) (string, error) {
-	key, err := getAgentKey(agent, signer)
-	if err != nil {
-		return "", err
+	if agent.Key == nil {
+		caKey, _ := gDb.GetKey("CA")
+		if caKey == nil {
+			return "", errors.New("must create or set CA Key first")
+		}
+		key, err := certificates.NewHostCertificate(*caKey, agent.Name)
+		if err != nil {
+			return "", err
+		}
+		agent.Key = key
 	}
 
-	ks, err := keys.DecodePublicKeyString(key)
-	if err != nil {
-		return "", err
-	}
-	agent.PublicKey = key
 	agent.ID = uuid.New().String()
 
-	err = gDb.SaveAgent(agent)
+	err := gDb.SaveAgent(agent)
 	if err != nil {
 		return "", err
 	}
 
-	verifiers[agent.ID] = keys.NewVerifier(ks)
 	return agent.ID, nil
 }
 
@@ -52,59 +52,34 @@ func GetAgentStatus(agentID string) (map[string]interface{}, error) {
 		return nil, err
 	}
 
-	return getAgentStatus(*agent, signer)
+	return getAgentStatus(*agent)
 }
 
-func getAgentStatus(agent model.Agent, s keys.Signer) (map[string]interface{}, error) {
-	aR := httpapi.NewRequest(agent.Address, "/status", "GET")
-
-	response, err := aR.Send(s)
-	if err != nil {
-		return nil, err
-	}
-
-	return response.Data, nil
-}
-
-// agentKey contacts the given agentID and retrieves it's public key
-func getAgentKey(agent model.Agent, s keys.Signer) (string, error) {
-	aR := httpapi.NewRequest(agent.Address, "/key", "GET")
-	//aR := &httpapi.Request{Host: agent.Address, Path: "/key", Method: "GET"}
-
-	response, err := aR.Send(s)
-	if err != nil {
-		return "", err
-	}
-
-	key, ok := response.Data["keyString"].(string)
-	if !ok {
-		return "", errors.New("Invalid key returned from agent")
-	}
-
-	return key, nil
+func getAgentStatus(agent model.Agent) (map[string]interface{}, error) {
+	return nil, nil
 }
 
 // UpdateAgent updates the information for given agent id
-func UpdateAgent(agent model.Agent, loadKey bool) error {
+func UpdateAgent(agent model.Agent) error {
 	current, err := gDb.GetAgent(agent.ID)
 	if err != nil {
 		return err
 	}
 
-	if loadKey {
-		key, err := getAgentKey(agent, signer)
-		if err != nil {
-			return err
+	if agent.Key == nil {
+		if current.Name != agent.Name {
+			caKey, _ := gDb.GetKey("CA")
+			if caKey == nil {
+				return errors.New("must create or set CA Key first")
+			}
+			key, err := certificates.NewHostCertificate(*caKey, agent.Name)
+			if err != nil {
+				return err
+			}
+			agent.Key = key
+		} else {
+			agent.Key = current.Key
 		}
-
-		ks, err := keys.DecodePublicKeyString(key)
-		if err != nil {
-			return err
-		}
-		agent.PublicKey = key
-		verifiers[agent.ID] = keys.NewVerifier(ks)
-	} else {
-		agent.PublicKey = current.PublicKey
 	}
 
 	return gDb.SaveAgent(agent)

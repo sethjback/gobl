@@ -97,11 +97,11 @@ o7dcL5PhNOw/NRbfsMjr1apWMj97Ix1fd9WUFvNueTgCCsiI1UJC07k=
 func TestNewCA(t *testing.T) {
 	assert := assert.New(t)
 
-	ca, err := NewCA(CertPEM(caCRT))
+	ca, err := OpenCA(CertPEM(caCRT))
 	assert.Nil(err)
 	assert.Len(ca.Pool.Subjects(), 1)
 
-	ca, err = NewCA(CertPEM([]byte(`not a cert`)))
+	ca, err = OpenCA(CertPEM([]byte(`not a cert`)))
 	assert.NotNil(err)
 	assert.Nil(ca)
 
@@ -110,11 +110,11 @@ func TestNewCA(t *testing.T) {
 		defer os.Remove("CAcert")
 	}
 
-	ca, err = NewCA(CertPath("CAcert"))
+	ca, err = OpenCA(CertPath("CAcert"))
 	assert.Nil(err)
 	assert.Len(ca.Pool.Subjects(), 1)
 
-	ca, err = NewCA(CertPath(`not a cert`))
+	ca, err = OpenCA(CertPath(`not a cert`))
 	assert.NotNil(err)
 	assert.Nil(ca)
 }
@@ -122,14 +122,14 @@ func TestNewCA(t *testing.T) {
 func TestNewHostCertificate(t *testing.T) {
 	assert := assert.New(t)
 
-	hc, err := NewHostCertificate(CertPEM(hostCRT), CertPEM(hostKey))
+	hc, err := OpenHostCertificate(CertPEM(hostCRT), CertPEM(hostKey))
 	assert.Nil(err)
 	assert.NotNil(hc)
 
-	_, err = NewHostCertificate(CertPEM([]byte(`nada cert`)), CertPEM(hostKey))
+	_, err = OpenHostCertificate(CertPEM([]byte(`nada cert`)), CertPEM(hostKey))
 	assert.NotNil(err)
 
-	_, err = NewHostCertificate(CertPEM(hostCRT), CertPEM([]byte(`nada key`)))
+	_, err = OpenHostCertificate(CertPEM(hostCRT), CertPEM([]byte(`nada key`)))
 	assert.NotNil(err)
 
 	err = ioutil.WriteFile("hostCRT", hostCRT, 0644)
@@ -146,15 +146,29 @@ func TestNewHostCertificate(t *testing.T) {
 		return
 	}
 
-	hc, err = NewHostCertificate(CertPath("hostCRT"), CertPath("hostKey"))
+	hc, err = OpenHostCertificate(CertPath("hostCRT"), CertPath("hostKey"))
 	assert.Nil(err)
 	assert.NotNil(hc)
 
-	hc, err = NewHostCertificate(CertPath("nada"), CertPath("hostKey"))
+	hc, err = OpenHostCertificate(CertPath("nada"), CertPath("hostKey"))
 	assert.Nil(hc)
 	assert.NotNil(err)
 
-	hc, err = NewHostCertificate(CertPath("hostCRT"), CertPath("nada"))
+	hc, err = OpenHostCertificate(CertPath("hostCRT"), CertPath("nada"))
 	assert.Nil(hc)
 	assert.NotNil(err)
+}
+
+func TestNewCertificates(t *testing.T) {
+	assert := assert.New(t)
+
+	caKey, err := NewCACertificate()
+	assert.Nil(err)
+	if !assert.NotNil(caKey) {
+		return
+	}
+
+	akey, err := NewHostCertificate(*caKey, "007")
+	assert.Nil(err)
+	assert.NotNil(akey)
 }

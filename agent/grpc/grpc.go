@@ -135,12 +135,12 @@ func SaveConfig(cs config.Store, env map[string]string) error {
 	}
 
 	var err error
-	sc.hostCert, err = certificates.NewHostCertificate(certificates.CertPath(hcPath), certificates.CertPath(hkPath))
+	sc.hostCert, err = certificates.OpenHostCertificate(certificates.CertPath(hcPath), certificates.CertPath(hkPath))
 	if err != nil {
 		return err
 	}
 
-	sc.caCert, err = certificates.NewCA(certificates.CertPath(caPath))
+	sc.caCert, err = certificates.OpenCA(certificates.CertPath(caPath))
 	if err != nil {
 		return err
 	}
