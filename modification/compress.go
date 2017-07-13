@@ -3,6 +3,7 @@ package modification
 import (
 	"compress/gzip"
 	"io"
+	"strconv"
 
 	"github.com/sethjback/gobl/goblerr"
 )
@@ -98,7 +99,7 @@ func (c *Compress) Direction(d int) {
 }
 
 // Configure configures the compressor
-func (c *Compress) Configure(options map[string]interface{}) error {
+func (c *Compress) Configure(options map[string]string) error {
 	//defaults
 
 	c.level = 5
@@ -106,19 +107,14 @@ func (c *Compress) Configure(options map[string]interface{}) error {
 	for k, v := range options {
 		switch k {
 		case "method":
-			valS, ok := v.(string)
-			if !ok {
-				return goblerr.New("method must be string", ErrorInvalidOptionValue, "acceptible options are: gzip")
-			}
-
-			if valS != "gzip" {
+			if v != "gzip" {
 				return goblerr.New("method not supported", ErrorInvalidOptionValue, "acceptible options are: gzip")
 			}
 
-			c.method = valS
+			c.method = v
 		case "level":
-			valI, ok := v.(int)
-			if !ok {
+			valI, err := strconv.Atoi(v)
+			if err != nil {
 				return goblerr.New("level must be int", ErrorInvalidOptionValue, "level must be between 1 and 9")
 			}
 			if valI < 1 || valI > 9 {

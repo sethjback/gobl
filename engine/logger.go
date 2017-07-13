@@ -47,7 +47,7 @@ func (e *Logger) SaveOptions() []Option {
 }
 
 // ConfigureBackup configures the engine so it is ready to use
-func (e *Logger) ConfigureSave(options map[string]interface{}) error {
+func (e *Logger) ConfigureSave(options map[string]string) error {
 	return e.configure(options)
 }
 
@@ -70,7 +70,7 @@ func (e *Logger) RestoreOptions() []Option {
 	return getOptions()
 }
 
-func (e *Logger) ConfigureRestore(options map[string]interface{}) error {
+func (e *Logger) ConfigureRestore(options map[string]string) error {
 	return e.configure(options)
 }
 
@@ -118,26 +118,24 @@ func (e *Logger) recordAndSave(reader io.Reader, file files.File, errc chan<- er
 	}
 	_, err = lfile.WriteString(string(dataBytes) + "\n")
 	lfile.Close()
+
 	if err != nil {
 		errc <- err
 	}
 }
 
-func (e *Logger) configure(options map[string]interface{}) error {
+func (e *Logger) configure(options map[string]string) error {
 	for k, v := range options {
 		switch strings.ToLower(k) {
 		case strings.ToLower(LoggerOptionLogPath):
-			vString, ok := v.(string)
-			if !ok {
-				return goblerr.New("Invalid option", ErrorInvalidOptionValue, LoggerOptionLogPath+" must be a string")
-			}
-			e.logPath = vString
+			e.logPath = v
 		case strings.ToLower(LoggerOptionOverwrite):
-			vbool, ok := v.(bool)
-			if !ok {
-				return goblerr.New("Invalid option", ErrorInvalidOptionValue, LoggerOptionOverwrite+" must be a bool")
+			if v != "true" && v != "false" {
+				return goblerr.New("Invalid option", ErrorInvalidOptionValue, LoggerOptionOverwrite+" must true or false")
 			}
-			e.overWrite = vbool
+			if v == "true" {
+				e.overWrite = true
+			}
 		}
 	}
 

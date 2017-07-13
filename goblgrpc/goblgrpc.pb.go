@@ -9,6 +9,9 @@ It is generated from these files:
 
 It has these top-level messages:
 	ReturnMessage
+	StateRequest
+	JobState
+	RestoreRequest
 	JobDefinition
 	Path
 	MEDefinition
@@ -40,6 +43,42 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
+type State int32
+
+const (
+	State_DISCOVERY State = 0
+	State_RUNNING   State = 1
+	State_NOTIFYING State = 3
+	State_CANCELED  State = 4
+	State_FAILED    State = 5
+	State_FINISHED  State = 6
+	State_NOTFOUND  State = 7
+)
+
+var State_name = map[int32]string{
+	0: "DISCOVERY",
+	1: "RUNNING",
+	3: "NOTIFYING",
+	4: "CANCELED",
+	5: "FAILED",
+	6: "FINISHED",
+	7: "NOTFOUND",
+}
+var State_value = map[string]int32{
+	"DISCOVERY": 0,
+	"RUNNING":   1,
+	"NOTIFYING": 3,
+	"CANCELED":  4,
+	"FAILED":    5,
+	"FINISHED":  6,
+	"NOTFOUND":  7,
+}
+
+func (x State) String() string {
+	return proto.EnumName(State_name, int32(x))
+}
+func (State) EnumDescriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+
 type ReturnMessage struct {
 	// message holds information about the call and detailed error information if there was a problem
 	Message string `protobuf:"bytes,1,opt,name=message" json:"message,omitempty"`
@@ -66,6 +105,90 @@ func (m *ReturnMessage) GetCode() string {
 	return ""
 }
 
+type StateRequest struct {
+	Id string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+}
+
+func (m *StateRequest) Reset()                    { *m = StateRequest{} }
+func (m *StateRequest) String() string            { return proto.CompactTextString(m) }
+func (*StateRequest) ProtoMessage()               {}
+func (*StateRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+
+func (m *StateRequest) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+// JobState is for communicating basic job state from the agent to the coordinator
+type JobState struct {
+	// id of the job to update
+	Id string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+	// message is a user friendly status message
+	Message string `protobuf:"bytes,2,opt,name=message" json:"message,omitempty"`
+	// state
+	State          State `protobuf:"varint,3,opt,name=state,enum=goblgrpc.State" json:"state,omitempty"`
+	TotalFiles     int32 `protobuf:"varint,4,opt,name=totalFiles" json:"totalFiles,omitempty"`
+	CompletedFiles int32 `protobuf:"varint,5,opt,name=completedFiles" json:"completedFiles,omitempty"`
+}
+
+func (m *JobState) Reset()                    { *m = JobState{} }
+func (m *JobState) String() string            { return proto.CompactTextString(m) }
+func (*JobState) ProtoMessage()               {}
+func (*JobState) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
+
+func (m *JobState) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
+func (m *JobState) GetMessage() string {
+	if m != nil {
+		return m.Message
+	}
+	return ""
+}
+
+func (m *JobState) GetState() State {
+	if m != nil {
+		return m.State
+	}
+	return State_DISCOVERY
+}
+
+func (m *JobState) GetTotalFiles() int32 {
+	if m != nil {
+		return m.TotalFiles
+	}
+	return 0
+}
+
+func (m *JobState) GetCompletedFiles() int32 {
+	if m != nil {
+		return m.CompletedFiles
+	}
+	return 0
+}
+
+type RestoreRequest struct {
+	Id string `protobuf:"bytes,1,opt,name=id" json:"id,omitempty"`
+}
+
+func (m *RestoreRequest) Reset()                    { *m = RestoreRequest{} }
+func (m *RestoreRequest) String() string            { return proto.CompactTextString(m) }
+func (*RestoreRequest) ProtoMessage()               {}
+func (*RestoreRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
+
+func (m *RestoreRequest) GetId() string {
+	if m != nil {
+		return m.Id
+	}
+	return ""
+}
+
 // JobDefinition contains all the data necessary to start a job
 type JobDefinition struct {
 	// id of the job
@@ -83,7 +206,7 @@ type JobDefinition struct {
 func (m *JobDefinition) Reset()                    { *m = JobDefinition{} }
 func (m *JobDefinition) String() string            { return proto.CompactTextString(m) }
 func (*JobDefinition) ProtoMessage()               {}
-func (*JobDefinition) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+func (*JobDefinition) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
 
 func (m *JobDefinition) GetId() string {
 	if m != nil {
@@ -131,7 +254,7 @@ type Path struct {
 func (m *Path) Reset()                    { *m = Path{} }
 func (m *Path) String() string            { return proto.CompactTextString(m) }
 func (*Path) ProtoMessage()               {}
-func (*Path) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
+func (*Path) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5} }
 
 func (m *Path) GetRoot() string {
 	if m != nil {
@@ -158,7 +281,7 @@ type MEDefinition struct {
 func (m *MEDefinition) Reset()                    { *m = MEDefinition{} }
 func (m *MEDefinition) String() string            { return proto.CompactTextString(m) }
 func (*MEDefinition) ProtoMessage()               {}
-func (*MEDefinition) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
+func (*MEDefinition) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{6} }
 
 func (m *MEDefinition) GetName() string {
 	if m != nil {
@@ -185,7 +308,7 @@ type Option struct {
 func (m *Option) Reset()                    { *m = Option{} }
 func (m *Option) String() string            { return proto.CompactTextString(m) }
 func (*Option) ProtoMessage()               {}
-func (*Option) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
+func (*Option) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{7} }
 
 func (m *Option) GetName() string {
 	if m != nil {
@@ -202,14 +325,16 @@ func (m *Option) GetValue() string {
 }
 
 type FileRequest struct {
-	JobId string `protobuf:"bytes,1,opt,name=jobId" json:"jobId,omitempty"`
-	File  *File  `protobuf:"bytes,2,opt,name=file" json:"file,omitempty"`
+	JobId   string `protobuf:"bytes,1,opt,name=jobId" json:"jobId,omitempty"`
+	File    *File  `protobuf:"bytes,2,opt,name=file" json:"file,omitempty"`
+	State   State  `protobuf:"varint,3,opt,name=state,enum=goblgrpc.State" json:"state,omitempty"`
+	Message string `protobuf:"bytes,4,opt,name=message" json:"message,omitempty"`
 }
 
 func (m *FileRequest) Reset()                    { *m = FileRequest{} }
 func (m *FileRequest) String() string            { return proto.CompactTextString(m) }
 func (*FileRequest) ProtoMessage()               {}
-func (*FileRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5} }
+func (*FileRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{8} }
 
 func (m *FileRequest) GetJobId() string {
 	if m != nil {
@@ -225,6 +350,20 @@ func (m *FileRequest) GetFile() *File {
 	return nil
 }
 
+func (m *FileRequest) GetState() State {
+	if m != nil {
+		return m.State
+	}
+	return State_DISCOVERY
+}
+
+func (m *FileRequest) GetMessage() string {
+	if m != nil {
+		return m.Message
+	}
+	return ""
+}
+
 type File struct {
 	Signature *Signature `protobuf:"bytes,1,opt,name=signature" json:"signature,omitempty"`
 	Meta      *Meta      `protobuf:"bytes,2,opt,name=meta" json:"meta,omitempty"`
@@ -233,7 +372,7 @@ type File struct {
 func (m *File) Reset()                    { *m = File{} }
 func (m *File) String() string            { return proto.CompactTextString(m) }
 func (*File) ProtoMessage()               {}
-func (*File) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{6} }
+func (*File) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{9} }
 
 func (m *File) GetSignature() *Signature {
 	if m != nil {
@@ -258,7 +397,7 @@ type Signature struct {
 func (m *Signature) Reset()                    { *m = Signature{} }
 func (m *Signature) String() string            { return proto.CompactTextString(m) }
 func (*Signature) ProtoMessage()               {}
-func (*Signature) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{7} }
+func (*Signature) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{10} }
 
 func (m *Signature) GetPath() string {
 	if m != nil {
@@ -290,7 +429,7 @@ type Meta struct {
 func (m *Meta) Reset()                    { *m = Meta{} }
 func (m *Meta) String() string            { return proto.CompactTextString(m) }
 func (*Meta) ProtoMessage()               {}
-func (*Meta) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{8} }
+func (*Meta) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{11} }
 
 func (m *Meta) GetMode() uint32 {
 	if m != nil {
@@ -315,6 +454,9 @@ func (m *Meta) GetGid() int32 {
 
 func init() {
 	proto.RegisterType((*ReturnMessage)(nil), "goblgrpc.ReturnMessage")
+	proto.RegisterType((*StateRequest)(nil), "goblgrpc.StateRequest")
+	proto.RegisterType((*JobState)(nil), "goblgrpc.JobState")
+	proto.RegisterType((*RestoreRequest)(nil), "goblgrpc.RestoreRequest")
 	proto.RegisterType((*JobDefinition)(nil), "goblgrpc.JobDefinition")
 	proto.RegisterType((*Path)(nil), "goblgrpc.Path")
 	proto.RegisterType((*MEDefinition)(nil), "goblgrpc.MEDefinition")
@@ -323,6 +465,7 @@ func init() {
 	proto.RegisterType((*File)(nil), "goblgrpc.File")
 	proto.RegisterType((*Signature)(nil), "goblgrpc.Signature")
 	proto.RegisterType((*Meta)(nil), "goblgrpc.Meta")
+	proto.RegisterEnum("goblgrpc.State", State_name, State_value)
 }
 
 // Reference imports to suppress errors if they are not otherwise used.
@@ -345,17 +488,15 @@ type AgentClient interface {
 	// this job should validate and configure the job. A success return from this call
 	// guarantees any Restore Job related calls from the Coordinator will succeed.
 	Restore(ctx context.Context, in *JobDefinition, opts ...grpc.CallOption) (*ReturnMessage, error)
-	// RestoreFile streams the individual files to restore
-	// the Coordinator will stream individual file signatures previously recorded
-	// from a backup job. The agent should queue these requests and run the restores
-	// in parallel according to the job definition.
-	RestoreFile(ctx context.Context, opts ...grpc.CallOption) (Agent_RestoreFileClient, error)
 	// Terminate the job
 	// agents should gracefully terminate any work currently associated with the job
 	// before returning. Any queues dealing with outstanding work should be emptied,
 	// but ongoing notification about already complete files
 	// (i.e. calls to the Coordinator File call) should continue until acknowledged.
 	Cancel(ctx context.Context, in *JobDefinition, opts ...grpc.CallOption) (*ReturnMessage, error)
+	// State of the job
+	// if agents are currently running a job, they should return the
+	State(ctx context.Context, in *StateRequest, opts ...grpc.CallOption) (*JobState, error)
 }
 
 type agentClient struct {
@@ -384,43 +525,18 @@ func (c *agentClient) Restore(ctx context.Context, in *JobDefinition, opts ...gr
 	return out, nil
 }
 
-func (c *agentClient) RestoreFile(ctx context.Context, opts ...grpc.CallOption) (Agent_RestoreFileClient, error) {
-	stream, err := grpc.NewClientStream(ctx, &_Agent_serviceDesc.Streams[0], c.cc, "/goblgrpc.Agent/RestoreFile", opts...)
-	if err != nil {
-		return nil, err
-	}
-	x := &agentRestoreFileClient{stream}
-	return x, nil
-}
-
-type Agent_RestoreFileClient interface {
-	Send(*FileRequest) error
-	CloseAndRecv() (*ReturnMessage, error)
-	grpc.ClientStream
-}
-
-type agentRestoreFileClient struct {
-	grpc.ClientStream
-}
-
-func (x *agentRestoreFileClient) Send(m *FileRequest) error {
-	return x.ClientStream.SendMsg(m)
-}
-
-func (x *agentRestoreFileClient) CloseAndRecv() (*ReturnMessage, error) {
-	if err := x.ClientStream.CloseSend(); err != nil {
-		return nil, err
-	}
-	m := new(ReturnMessage)
-	if err := x.ClientStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
 func (c *agentClient) Cancel(ctx context.Context, in *JobDefinition, opts ...grpc.CallOption) (*ReturnMessage, error) {
 	out := new(ReturnMessage)
 	err := grpc.Invoke(ctx, "/goblgrpc.Agent/Cancel", in, out, c.cc, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *agentClient) State(ctx context.Context, in *StateRequest, opts ...grpc.CallOption) (*JobState, error) {
+	out := new(JobState)
+	err := grpc.Invoke(ctx, "/goblgrpc.Agent/State", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -439,17 +555,15 @@ type AgentServer interface {
 	// this job should validate and configure the job. A success return from this call
 	// guarantees any Restore Job related calls from the Coordinator will succeed.
 	Restore(context.Context, *JobDefinition) (*ReturnMessage, error)
-	// RestoreFile streams the individual files to restore
-	// the Coordinator will stream individual file signatures previously recorded
-	// from a backup job. The agent should queue these requests and run the restores
-	// in parallel according to the job definition.
-	RestoreFile(Agent_RestoreFileServer) error
 	// Terminate the job
 	// agents should gracefully terminate any work currently associated with the job
 	// before returning. Any queues dealing with outstanding work should be emptied,
 	// but ongoing notification about already complete files
 	// (i.e. calls to the Coordinator File call) should continue until acknowledged.
 	Cancel(context.Context, *JobDefinition) (*ReturnMessage, error)
+	// State of the job
+	// if agents are currently running a job, they should return the
+	State(context.Context, *StateRequest) (*JobState, error)
 }
 
 func RegisterAgentServer(s *grpc.Server, srv AgentServer) {
@@ -492,32 +606,6 @@ func _Agent_Restore_Handler(srv interface{}, ctx context.Context, dec func(inter
 	return interceptor(ctx, in, info, handler)
 }
 
-func _Agent_RestoreFile_Handler(srv interface{}, stream grpc.ServerStream) error {
-	return srv.(AgentServer).RestoreFile(&agentRestoreFileServer{stream})
-}
-
-type Agent_RestoreFileServer interface {
-	SendAndClose(*ReturnMessage) error
-	Recv() (*FileRequest, error)
-	grpc.ServerStream
-}
-
-type agentRestoreFileServer struct {
-	grpc.ServerStream
-}
-
-func (x *agentRestoreFileServer) SendAndClose(m *ReturnMessage) error {
-	return x.ServerStream.SendMsg(m)
-}
-
-func (x *agentRestoreFileServer) Recv() (*FileRequest, error) {
-	m := new(FileRequest)
-	if err := x.ServerStream.RecvMsg(m); err != nil {
-		return nil, err
-	}
-	return m, nil
-}
-
 func _Agent_Cancel_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(JobDefinition)
 	if err := dec(in); err != nil {
@@ -532,6 +620,24 @@ func _Agent_Cancel_Handler(srv interface{}, ctx context.Context, dec func(interf
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(AgentServer).Cancel(ctx, req.(*JobDefinition))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _Agent_State_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(StateRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AgentServer).State(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/goblgrpc.Agent/State",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AgentServer).State(ctx, req.(*StateRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -552,14 +658,12 @@ var _Agent_serviceDesc = grpc.ServiceDesc{
 			MethodName: "Cancel",
 			Handler:    _Agent_Cancel_Handler,
 		},
-	},
-	Streams: []grpc.StreamDesc{
 		{
-			StreamName:    "RestoreFile",
-			Handler:       _Agent_RestoreFile_Handler,
-			ClientStreams: true,
+			MethodName: "State",
+			Handler:    _Agent_State_Handler,
 		},
 	},
+	Streams:  []grpc.StreamDesc{},
 	Metadata: "goblgrpc.proto",
 }
 
@@ -570,9 +674,14 @@ type CoordinatorClient interface {
 	// FileRequests sent in this call should only represent files that have been completed
 	// e.g. completely backed up or restored.
 	File(ctx context.Context, opts ...grpc.CallOption) (Coordinator_FileClient, error)
-	// Finish indicates all work for the particular job definition has been completed
-	// by the agent. Any additional calls related to the particular definition will fail
-	Finish(ctx context.Context, in *JobDefinition, opts ...grpc.CallOption) (*ReturnMessage, error)
+	// Restore streams the individual files to restore
+	// the Coordinator will stream individual file signatures previously recorded
+	// from a backup job. The agent should queue and run the restores
+	// in parallel according to the job definition. Once the file is processed
+	// the agent should update the status via the File call
+	Restore(ctx context.Context, in *RestoreRequest, opts ...grpc.CallOption) (Coordinator_RestoreClient, error)
+	// State allows the agent to push job state to the coordinator
+	State(ctx context.Context, in *JobState, opts ...grpc.CallOption) (*ReturnMessage, error)
 }
 
 type coordinatorClient struct {
@@ -617,9 +726,41 @@ func (x *coordinatorFileClient) CloseAndRecv() (*ReturnMessage, error) {
 	return m, nil
 }
 
-func (c *coordinatorClient) Finish(ctx context.Context, in *JobDefinition, opts ...grpc.CallOption) (*ReturnMessage, error) {
+func (c *coordinatorClient) Restore(ctx context.Context, in *RestoreRequest, opts ...grpc.CallOption) (Coordinator_RestoreClient, error) {
+	stream, err := grpc.NewClientStream(ctx, &_Coordinator_serviceDesc.Streams[1], c.cc, "/goblgrpc.Coordinator/Restore", opts...)
+	if err != nil {
+		return nil, err
+	}
+	x := &coordinatorRestoreClient{stream}
+	if err := x.ClientStream.SendMsg(in); err != nil {
+		return nil, err
+	}
+	if err := x.ClientStream.CloseSend(); err != nil {
+		return nil, err
+	}
+	return x, nil
+}
+
+type Coordinator_RestoreClient interface {
+	Recv() (*FileRequest, error)
+	grpc.ClientStream
+}
+
+type coordinatorRestoreClient struct {
+	grpc.ClientStream
+}
+
+func (x *coordinatorRestoreClient) Recv() (*FileRequest, error) {
+	m := new(FileRequest)
+	if err := x.ClientStream.RecvMsg(m); err != nil {
+		return nil, err
+	}
+	return m, nil
+}
+
+func (c *coordinatorClient) State(ctx context.Context, in *JobState, opts ...grpc.CallOption) (*ReturnMessage, error) {
 	out := new(ReturnMessage)
-	err := grpc.Invoke(ctx, "/goblgrpc.Coordinator/Finish", in, out, c.cc, opts...)
+	err := grpc.Invoke(ctx, "/goblgrpc.Coordinator/State", in, out, c.cc, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -633,9 +774,14 @@ type CoordinatorServer interface {
 	// FileRequests sent in this call should only represent files that have been completed
 	// e.g. completely backed up or restored.
 	File(Coordinator_FileServer) error
-	// Finish indicates all work for the particular job definition has been completed
-	// by the agent. Any additional calls related to the particular definition will fail
-	Finish(context.Context, *JobDefinition) (*ReturnMessage, error)
+	// Restore streams the individual files to restore
+	// the Coordinator will stream individual file signatures previously recorded
+	// from a backup job. The agent should queue and run the restores
+	// in parallel according to the job definition. Once the file is processed
+	// the agent should update the status via the File call
+	Restore(*RestoreRequest, Coordinator_RestoreServer) error
+	// State allows the agent to push job state to the coordinator
+	State(context.Context, *JobState) (*ReturnMessage, error)
 }
 
 func RegisterCoordinatorServer(s *grpc.Server, srv CoordinatorServer) {
@@ -668,20 +814,41 @@ func (x *coordinatorFileServer) Recv() (*FileRequest, error) {
 	return m, nil
 }
 
-func _Coordinator_Finish_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(JobDefinition)
+func _Coordinator_Restore_Handler(srv interface{}, stream grpc.ServerStream) error {
+	m := new(RestoreRequest)
+	if err := stream.RecvMsg(m); err != nil {
+		return err
+	}
+	return srv.(CoordinatorServer).Restore(m, &coordinatorRestoreServer{stream})
+}
+
+type Coordinator_RestoreServer interface {
+	Send(*FileRequest) error
+	grpc.ServerStream
+}
+
+type coordinatorRestoreServer struct {
+	grpc.ServerStream
+}
+
+func (x *coordinatorRestoreServer) Send(m *FileRequest) error {
+	return x.ServerStream.SendMsg(m)
+}
+
+func _Coordinator_State_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(JobState)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
 	if interceptor == nil {
-		return srv.(CoordinatorServer).Finish(ctx, in)
+		return srv.(CoordinatorServer).State(ctx, in)
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/goblgrpc.Coordinator/Finish",
+		FullMethod: "/goblgrpc.Coordinator/State",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(CoordinatorServer).Finish(ctx, req.(*JobDefinition))
+		return srv.(CoordinatorServer).State(ctx, req.(*JobState))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -691,8 +858,8 @@ var _Coordinator_serviceDesc = grpc.ServiceDesc{
 	HandlerType: (*CoordinatorServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
-			MethodName: "Finish",
-			Handler:    _Coordinator_Finish_Handler,
+			MethodName: "State",
+			Handler:    _Coordinator_State_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
@@ -701,6 +868,11 @@ var _Coordinator_serviceDesc = grpc.ServiceDesc{
 			Handler:       _Coordinator_File_Handler,
 			ClientStreams: true,
 		},
+		{
+			StreamName:    "Restore",
+			Handler:       _Coordinator_Restore_Handler,
+			ServerStreams: true,
+		},
 	},
 	Metadata: "goblgrpc.proto",
 }
@@ -708,38 +880,51 @@ var _Coordinator_serviceDesc = grpc.ServiceDesc{
 func init() { proto.RegisterFile("goblgrpc.proto", fileDescriptor0) }
 
 var fileDescriptor0 = []byte{
-	// 518 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x9c, 0x54, 0x4d, 0x6f, 0xd3, 0x30,
-	0x18, 0x26, 0x69, 0xd2, 0xae, 0x6f, 0x68, 0x35, 0x99, 0xaf, 0x68, 0xa7, 0xca, 0x9a, 0x50, 0xb5,
-	0xc3, 0x24, 0x82, 0xc4, 0x01, 0x6d, 0x48, 0x63, 0x30, 0x04, 0x52, 0x01, 0x99, 0x13, 0x07, 0x0e,
-	0x6e, 0xe2, 0x26, 0x86, 0x24, 0x0e, 0xb1, 0x83, 0xf8, 0x03, 0x88, 0x9f, 0xc8, 0xdf, 0x41, 0xb6,
-	0x93, 0x66, 0x29, 0xa8, 0x87, 0xde, 0x9e, 0xf7, 0xe3, 0x79, 0xfc, 0x7e, 0x25, 0x30, 0x4f, 0xc5,
-	0x3a, 0x4f, 0xeb, 0x2a, 0x3e, 0xaf, 0x6a, 0xa1, 0x04, 0x3a, 0xea, 0x6c, 0x7c, 0x09, 0x33, 0xc2,
-	0x54, 0x53, 0x97, 0x2b, 0x26, 0x25, 0x4d, 0x19, 0x0a, 0x61, 0x52, 0x58, 0x18, 0x3a, 0x0b, 0x67,
-	0x39, 0x25, 0x9d, 0x89, 0x10, 0x78, 0xb1, 0x48, 0x58, 0xe8, 0x1a, 0xb7, 0xc1, 0xf8, 0x8f, 0x03,
-	0xb3, 0x77, 0x62, 0xfd, 0x8a, 0x6d, 0x78, 0xc9, 0x15, 0x17, 0x25, 0x9a, 0x83, 0xcb, 0x93, 0x96,
-	0xea, 0xf2, 0x04, 0x3d, 0x06, 0x57, 0x89, 0xd0, 0x5d, 0x8c, 0x96, 0x41, 0xf4, 0xf0, 0x7c, 0x5b,
-	0xc7, 0xea, 0x75, 0xcf, 0x21, 0xae, 0x12, 0xe8, 0x0c, 0xbc, 0x4d, 0x2d, 0x8a, 0x70, 0xb4, 0x70,
-	0xf6, 0x64, 0x9a, 0x1c, 0x74, 0x01, 0xb3, 0x42, 0x24, 0x7c, 0xc3, 0x63, 0xaa, 0xbd, 0x32, 0xf4,
-	0xf6, 0xca, 0x0f, 0x93, 0xd1, 0x29, 0xf8, 0x15, 0x55, 0x99, 0x0c, 0x7d, 0xc3, 0x9a, 0xf7, 0xac,
-	0x8f, 0x54, 0x65, 0xc4, 0x06, 0xf1, 0x33, 0xf0, 0xb4, 0xa9, 0xbb, 0xae, 0x85, 0x50, 0x6d, 0x47,
-	0x06, 0xa3, 0x13, 0x38, 0x62, 0x3f, 0xe3, 0xbc, 0x49, 0x98, 0x34, 0x9d, 0x4d, 0xc9, 0xd6, 0xc6,
-	0xef, 0xe1, 0xee, 0xed, 0xc7, 0x35, 0xbf, 0xa4, 0x45, 0x37, 0x4c, 0x83, 0xd1, 0x19, 0x4c, 0x44,
-	0x65, 0x2b, 0xb7, 0x83, 0x39, 0xee, 0x6b, 0xf8, 0x60, 0x02, 0xa4, 0x4b, 0xc0, 0x11, 0x8c, 0xad,
-	0xeb, 0xbf, 0x4a, 0xf7, 0xc1, 0xff, 0x41, 0xf3, 0xa6, 0x5b, 0x8a, 0x35, 0xf0, 0x1b, 0x08, 0x6e,
-	0x78, 0xce, 0x08, 0xfb, 0xde, 0x30, 0xa9, 0x74, 0xd2, 0x57, 0xb1, 0x7e, 0xdb, 0x6d, 0xc5, 0x1a,
-	0x08, 0x83, 0xb7, 0xe1, 0xb9, 0x65, 0x0e, 0xa6, 0x60, 0xa8, 0x26, 0x86, 0xbf, 0x80, 0xa7, 0x2d,
-	0xf4, 0x04, 0xa6, 0x92, 0xa7, 0x25, 0x55, 0x4d, 0x6d, 0xdf, 0x0f, 0xa2, 0x7b, 0x3d, 0xe1, 0x53,
-	0x17, 0x22, 0x7d, 0x96, 0x96, 0x2f, 0x98, 0xa2, 0xff, 0xca, 0xaf, 0x98, 0xa2, 0xc4, 0xc4, 0xf0,
-	0x67, 0x98, 0x6e, 0xb9, 0xba, 0x3d, 0x3d, 0xf9, 0xae, 0xbd, 0xaa, 0x1d, 0x7e, 0x46, 0x65, 0xd6,
-	0x9d, 0x9c, 0xc6, 0xe8, 0x74, 0x77, 0xf9, 0x23, 0xb3, 0x81, 0xa1, 0x13, 0xbf, 0x00, 0x4f, 0x3f,
-	0xa4, 0x15, 0x0a, 0x7d, 0xb4, 0x5a, 0x75, 0x46, 0x0c, 0x46, 0xc7, 0x30, 0x6a, 0x78, 0x62, 0x44,
-	0x7d, 0xa2, 0xa1, 0xf6, 0xa4, 0x3c, 0x31, 0xb7, 0xe7, 0x13, 0x0d, 0xa3, 0x5f, 0x2e, 0xf8, 0x57,
-	0x29, 0x2b, 0x15, 0xba, 0x80, 0xf1, 0x4b, 0x1a, 0x7f, 0x6b, 0x2a, 0xf4, 0xa8, 0x6f, 0x62, 0x70,
-	0xf3, 0x27, 0xb7, 0x02, 0x83, 0x8f, 0x09, 0xdf, 0x41, 0x97, 0x30, 0x21, 0x4c, 0x2a, 0x51, 0xb3,
-	0x83, 0xe8, 0x57, 0x10, 0xb4, 0x74, 0xb3, 0x87, 0x07, 0x3b, 0x5b, 0xb2, 0x0b, 0xde, 0x23, 0xb0,
-	0x74, 0x74, 0xfd, 0xd7, 0xb4, 0x8c, 0x59, 0x7e, 0x48, 0x01, 0xd1, 0x6f, 0x07, 0x82, 0x6b, 0x21,
-	0xea, 0x84, 0x97, 0x54, 0x89, 0x1a, 0x3d, 0x6f, 0x2f, 0xe2, 0xc0, 0x4a, 0x6e, 0x78, 0xc9, 0x65,
-	0x76, 0x48, 0x25, 0xeb, 0xb1, 0xf9, 0x75, 0x3d, 0xfd, 0x1b, 0x00, 0x00, 0xff, 0xff, 0xc7, 0xc7,
-	0x55, 0x25, 0xcc, 0x04, 0x00, 0x00,
+	// 726 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x9c, 0x55, 0xcd, 0x6e, 0xda, 0x4a,
+	0x14, 0xc6, 0x60, 0xf3, 0x73, 0x08, 0x5c, 0x34, 0x37, 0x37, 0x17, 0xb1, 0x88, 0xd0, 0x28, 0x37,
+	0x42, 0x59, 0x44, 0xb7, 0x54, 0xcd, 0xa2, 0x4a, 0x22, 0xa5, 0xfc, 0xb4, 0x44, 0x8d, 0xa9, 0x26,
+	0x49, 0xa5, 0x2c, 0xba, 0x18, 0xf0, 0x00, 0x6e, 0x8d, 0x87, 0xda, 0xe3, 0xaa, 0x8f, 0xd0, 0xf7,
+	0xe8, 0x93, 0xf4, 0x29, 0xfa, 0x2c, 0xdd, 0x55, 0x33, 0x83, 0x63, 0x9b, 0xfc, 0xa8, 0xca, 0xee,
+	0x9c, 0xf3, 0x9d, 0xef, 0xfc, 0x8f, 0x0d, 0xf5, 0x39, 0x9f, 0x78, 0xf3, 0x60, 0x35, 0x3d, 0x5c,
+	0x05, 0x5c, 0x70, 0x54, 0x8e, 0x75, 0x7c, 0x02, 0x35, 0xc2, 0x44, 0x14, 0xf8, 0x17, 0x2c, 0x0c,
+	0xe9, 0x9c, 0xa1, 0x26, 0x94, 0x96, 0x5a, 0x6c, 0x1a, 0x6d, 0xa3, 0x53, 0x21, 0xb1, 0x8a, 0x10,
+	0x98, 0x53, 0xee, 0xb0, 0x66, 0x5e, 0x99, 0x95, 0x8c, 0x77, 0x61, 0xeb, 0x52, 0x50, 0xc1, 0x08,
+	0xfb, 0x1c, 0xb1, 0x50, 0xa0, 0x3a, 0xe4, 0x5d, 0x67, 0x4d, 0xcc, 0xbb, 0x0e, 0xfe, 0x6e, 0x40,
+	0xf9, 0x9c, 0x4f, 0x94, 0xcf, 0x26, 0x98, 0x4e, 0x95, 0xcf, 0xa6, 0xfa, 0x0f, 0xac, 0x50, 0x52,
+	0x9a, 0x85, 0xb6, 0xd1, 0xa9, 0x77, 0xff, 0x3a, 0xbc, 0xad, 0x5f, 0x67, 0xd3, 0x28, 0xda, 0x05,
+	0x10, 0x5c, 0x50, 0x6f, 0xe8, 0x7a, 0x2c, 0x6c, 0x9a, 0x6d, 0xa3, 0x63, 0x91, 0x94, 0x05, 0xed,
+	0x43, 0x7d, 0xca, 0x97, 0x2b, 0x8f, 0x09, 0xe6, 0x68, 0x1f, 0x4b, 0xf9, 0x6c, 0x58, 0x71, 0x1b,
+	0xea, 0x84, 0x85, 0x82, 0x07, 0x0f, 0xf6, 0xf1, 0xd3, 0x80, 0xda, 0x39, 0x9f, 0xf4, 0xd9, 0xcc,
+	0xf5, 0x5d, 0xe1, 0x72, 0xff, 0x4e, 0x33, 0xfb, 0x90, 0x17, 0xbc, 0x99, 0x6f, 0x17, 0x3a, 0xd5,
+	0xee, 0x4e, 0x52, 0xef, 0xc5, 0x20, 0xe1, 0x90, 0xbc, 0xe0, 0xe8, 0x00, 0xcc, 0x59, 0xc0, 0x97,
+	0xaa, 0xb3, 0x87, 0x3d, 0x95, 0x0f, 0x3a, 0x86, 0xda, 0x92, 0x3b, 0xee, 0xcc, 0x9d, 0x52, 0x69,
+	0x95, 0x2d, 0x3e, 0x16, 0x3e, 0xeb, 0x8c, 0xf6, 0xc0, 0x5a, 0x51, 0xb1, 0x90, 0x4d, 0x4b, 0x56,
+	0x3d, 0x61, 0xbd, 0xa3, 0x62, 0x41, 0x34, 0x88, 0x8f, 0xc0, 0x94, 0xaa, 0xdc, 0x6e, 0xc0, 0xb9,
+	0x58, 0x77, 0xa4, 0x64, 0xd4, 0x82, 0x32, 0xfb, 0x3a, 0xf5, 0x22, 0x87, 0x85, 0xaa, 0xb3, 0x0a,
+	0xb9, 0xd5, 0xb1, 0x0d, 0x5b, 0xe9, 0xe4, 0x92, 0xef, 0xd3, 0x65, 0x7c, 0x34, 0x4a, 0x46, 0x07,
+	0x50, 0xe2, 0x2b, 0x5d, 0xb9, 0x1e, 0x4c, 0x23, 0xa9, 0x61, 0xac, 0x00, 0x12, 0x3b, 0xe0, 0x2e,
+	0x14, 0xb5, 0xe9, 0xde, 0x48, 0xdb, 0x60, 0x7d, 0xa1, 0x5e, 0x14, 0x1f, 0x8a, 0x56, 0xf0, 0x37,
+	0x03, 0xaa, 0x72, 0x83, 0xf1, 0xd6, 0xb6, 0xc1, 0xfa, 0xc8, 0x27, 0xa3, 0x78, 0x2d, 0x5a, 0x41,
+	0x18, 0xcc, 0x99, 0xeb, 0x69, 0x6a, 0x66, 0x0c, 0x8a, 0xaa, 0xb0, 0x3f, 0x3d, 0xb8, 0xd4, 0xc5,
+	0x9a, 0x99, 0x8b, 0xc5, 0x1f, 0xc0, 0x94, 0xe1, 0xd0, 0x33, 0xa8, 0x84, 0xee, 0xdc, 0xa7, 0x22,
+	0x0a, 0x74, 0x07, 0xd5, 0xee, 0xdf, 0xa9, 0x60, 0x31, 0x44, 0x12, 0x2f, 0x59, 0xdf, 0x92, 0x09,
+	0x7a, 0xb7, 0xbe, 0x0b, 0x26, 0x28, 0x51, 0x18, 0xbe, 0x81, 0xca, 0x2d, 0x57, 0x0e, 0x48, 0xee,
+	0x2e, 0x1e, 0xd0, 0x6a, 0xbd, 0xbe, 0x05, 0x0d, 0x17, 0xf1, 0xe3, 0x94, 0x32, 0xda, 0xdb, 0x3c,
+	0x9f, 0x82, 0xda, 0x61, 0xd6, 0x88, 0x4f, 0xc1, 0x94, 0x89, 0x64, 0x84, 0xa5, 0x7c, 0xde, 0x32,
+	0x6a, 0x8d, 0x28, 0x19, 0x35, 0xa0, 0x10, 0xb9, 0x8e, 0x0a, 0x6a, 0x11, 0x29, 0x4a, 0xcb, 0xdc,
+	0x75, 0xd4, 0x98, 0x2c, 0x22, 0xc5, 0x83, 0x05, 0x58, 0xfa, 0x79, 0xd7, 0xa0, 0xd2, 0x1f, 0x5d,
+	0xf6, 0xc6, 0xef, 0x07, 0xe4, 0xa6, 0x91, 0x43, 0x55, 0x28, 0x91, 0x6b, 0xdb, 0x1e, 0xd9, 0xaf,
+	0x1b, 0x86, 0xc4, 0xec, 0xf1, 0xd5, 0x68, 0x78, 0x23, 0xd5, 0x02, 0xda, 0x82, 0x72, 0xef, 0xcc,
+	0xee, 0x0d, 0xde, 0x0e, 0xfa, 0x0d, 0x13, 0x01, 0x14, 0x87, 0x67, 0x23, 0x29, 0x5b, 0x12, 0x19,
+	0x8e, 0xec, 0xd1, 0xe5, 0x9b, 0x41, 0xbf, 0x51, 0x94, 0x9a, 0x3d, 0xbe, 0x1a, 0x8e, 0xaf, 0xed,
+	0x7e, 0xa3, 0xd4, 0xfd, 0x65, 0x80, 0x75, 0x36, 0x67, 0xbe, 0x40, 0xc7, 0x50, 0x7c, 0x45, 0xa7,
+	0x9f, 0xa2, 0x15, 0xfa, 0x37, 0x19, 0x57, 0xe6, 0x7d, 0xb6, 0x52, 0x40, 0xe6, 0x03, 0x87, 0x73,
+	0xe8, 0x04, 0x4a, 0xeb, 0xe7, 0xfe, 0x24, 0xfa, 0x31, 0x14, 0x7b, 0xd4, 0x9f, 0x32, 0xef, 0x49,
+	0xec, 0x17, 0xf1, 0xb8, 0x76, 0x36, 0x6f, 0x4c, 0x1f, 0x71, 0x0b, 0x65, 0x82, 0x2a, 0x08, 0xe7,
+	0xba, 0x3f, 0x0c, 0xa8, 0xf6, 0x38, 0x0f, 0x1c, 0xd7, 0xa7, 0x82, 0x07, 0xe8, 0xe5, 0xfa, 0xde,
+	0xfe, 0xd9, 0x38, 0xe7, 0x75, 0x90, 0x87, 0x0b, 0xe8, 0x18, 0xe8, 0x34, 0xe9, 0xbf, 0x99, 0xf6,
+	0x4b, 0x7f, 0x01, 0x5b, 0xf7, 0x07, 0xc6, 0xb9, 0xff, 0x0d, 0x74, 0x14, 0xb7, 0x70, 0x4f, 0xa9,
+	0x8f, 0x64, 0x9e, 0x14, 0xd5, 0xcf, 0xe7, 0xf9, 0xef, 0x00, 0x00, 0x00, 0xff, 0xff, 0x12, 0x46,
+	0x02, 0xfd, 0x8e, 0x06, 0x00, 0x00,
 }

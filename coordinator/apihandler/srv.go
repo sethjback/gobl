@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/julienschmidt/httprouter"
-	"github.com/sethjback/gobl/coordinator/manager"
+	"github.com/sethjback/gobl/coordinator/email"
 	"github.com/sethjback/gobl/httpapi"
 )
 
@@ -25,7 +25,7 @@ func coordinatorStatus(r *httpapi.Request, ps httprouter.Params) httpapi.Respons
 }
 
 func testEmail(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
-	err := manager.SendTestEmail()
+	err := email.SendEmail("This is a test email from gobl. Let me be the first to congratulate you on receiving this message: it means your email is configured correctly. Way to go!", "Gobl Coordinator")
 	if err != nil {
 		return httpapi.Response{Error: err, HTTPCode: 400}
 	}

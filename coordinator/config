@@ -1,4 +1,5 @@
 DB_DRIVER=leveldb
+DB_PATH=./testdb
 
 HOST_CERT=Coordinator.crt
 HOST_KEY=Coordinator.key

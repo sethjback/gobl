@@ -14,44 +14,36 @@ func TestCompressConfigure(t *testing.T) {
 
 	c := &Compress{}
 
-	err := c.Configure(map[string]interface{}{})
+	err := c.Configure(map[string]string{})
 	assert.Nil(err)
 	assert.Equal(5, c.level)
 	assert.Equal("gzip", c.method)
 
-	err = c.Configure(map[string]interface{}{"method": "zlib"})
+	err = c.Configure(map[string]string{"method": "zlib"})
 	if assert.NotNil(err) {
 		gerr, ok := err.(goblerr.Error)
 		if assert.True(ok) {
-			assert.Equal(ErrorInvalidOptionValue, gerr.Code())
+			assert.Equal(ErrorInvalidOptionValue, gerr.Code)
 		}
 	}
 
-	err = c.Configure(map[string]interface{}{"method": 3})
+	err = c.Configure(map[string]string{"level": "10"})
 	if assert.NotNil(err) {
 		gerr, ok := err.(goblerr.Error)
 		if assert.True(ok) {
-			assert.Equal(ErrorInvalidOptionValue, gerr.Code())
+			assert.Equal(ErrorInvalidOptionValue, gerr.Code)
 		}
 	}
 
-	err = c.Configure(map[string]interface{}{"level": "10"})
+	err = c.Configure(map[string]string{"level": "23"})
 	if assert.NotNil(err) {
 		gerr, ok := err.(goblerr.Error)
 		if assert.True(ok) {
-			assert.Equal(ErrorInvalidOptionValue, gerr.Code())
+			assert.Equal(ErrorInvalidOptionValue, gerr.Code)
 		}
 	}
 
-	err = c.Configure(map[string]interface{}{"level": 23})
-	if assert.NotNil(err) {
-		gerr, ok := err.(goblerr.Error)
-		if assert.True(ok) {
-			assert.Equal(ErrorInvalidOptionValue, gerr.Code())
-		}
-	}
-
-	err = c.Configure(map[string]interface{}{"level": 2, "method": "gzip"})
+	err = c.Configure(map[string]string{"level": "2", "method": "gzip"})
 	assert.Nil(err)
 	assert.Equal(2, c.level)
 	assert.Equal("gzip", c.method)
@@ -61,7 +53,7 @@ func TestCompress(t *testing.T) {
 	assert := assert.New(t)
 
 	c := &Compress{}
-	c.Configure(map[string]interface{}{})
+	c.Configure(map[string]string{})
 	c.Direction(Forward)
 
 	toCompress := []byte("this is the string to test compress")

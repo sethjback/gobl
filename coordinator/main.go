@@ -7,10 +7,10 @@ import (
 
 	"github.com/sethjback/gobl/config"
 	"github.com/sethjback/gobl/coordinator/apihandler"
-	"github.com/sethjback/gobl/coordinator/grpc"
-	"github.com/sethjback/gobl/coordinator/manager"
-	"github.com/sethjback/gobl/email"
-	"github.com/sethjback/gobl/gobldb"
+	"github.com/sethjback/gobl/coordinator/cron"
+	"github.com/sethjback/gobl/coordinator/db"
+	"github.com/sethjback/gobl/coordinator/email"
+	"github.com/sethjback/gobl/coordinator/grpcserver"
 	"github.com/sethjback/gobl/httpapi"
 )
 
@@ -23,40 +23,49 @@ func main() {
 	cMap, err := config.Map(configPath)
 	if err != nil {
 		fmt.Printf("error with config: %v\n", err)
+		os.Exit(1)
 	}
 
 	cs := config.New()
 
-	err = gobldb.SaveConfig(cs, cMap)
+	err = db.SaveConfig(cs, cMap)
 	if err != nil {
 		fmt.Printf("Error configuring DB: %v\n", err)
+		os.Exit(1)
 	}
 
 	err = email.SaveConfig(cs, cMap)
 	if err != nil {
 		fmt.Printf("Error configuring email: %v\n", err)
+		os.Exit(1)
 	}
 
 	err = httpapi.SaveConfig(cs, cMap)
 	if err != nil {
 		fmt.Printf("Error configuring api server: %v\n", err)
+		os.Exit(1)
 	}
 
-	err = grpc.SaveConfig(cs, cMap)
+	err = grpcserver.SaveConfig(cs, cMap)
 	if err != nil {
 		fmt.Printf("Error configuring grpc server: %v\n", err)
 		os.Exit(1)
 	}
 
-	err = manager.Init(cs)
+	err = db.Init(cs)
 	if err != nil {
-		fmt.Printf("Error initializing manager: %v\n", err)
+		fmt.Printf("Error db init: %v\n", err)
 		os.Exit(1)
 	}
+	grpcserver.Init(db.Get())
+	cron.Init(db.Get())
+	apihandler.Init(db.Get())
 
 	httpAPI := httpapi.New(apihandler.Routes)
 	httpAPI.Start(cs, func() {
 		fmt.Println("Shutting Down")
-		manager.Shutdown()
+		grpcserver.Shutdown()
+		cron.Shutdown()
+		db.Shutdown()
 	})
 }

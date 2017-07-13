@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/sethjback/gobl/agent/coordinator"
 	"github.com/sethjback/gobl/engine"
 	"github.com/sethjback/gobl/model"
 	"github.com/sethjback/gobl/modification"
@@ -20,28 +19,27 @@ import (
 func TestBackup(t *testing.T) {
 	assert := assert.New(t)
 
-	b := &Backup{
-		Job: model.Job{
+	b := &backup{
+		job: model.Job{
 			ID:   uuid.New().String(),
 			Meta: &model.JobMeta{},
 		},
 		stateM:      &sync.Mutex{},
-		Coordinator: &coordinator.Coordinator{Address: "127.0.0.1"},
-		Notifier:    newTestNotifier(),
 		MaxWorkers:  1,
+		coordClient: &tgrpc{},
 	}
 
-	b.Job.Definition = &model.JobDefinition{
+	b.job.Definition = &model.JobDefinition{
 		Paths: []model.Path{model.Path{Root: "test"}},
 		Modifications: []modification.Definition{
-			modification.Definition{Name: "compress", Options: map[string]interface{}{"level": 5}}},
+			modification.Definition{Name: "compress", Options: map[string]string{"level": "5"}}},
 		To: []engine.Definition{
 			engine.Definition{
 				Name:    engine.NameLogger,
-				Options: map[string]interface{}{engine.LoggerOptionLogPath: "btest.log", engine.LoggerOptionOverwrite: false}},
+				Options: map[string]string{engine.LoggerOptionLogPath: "btest.log", engine.LoggerOptionOverwrite: "false"}},
 			engine.Definition{
 				Name:    engine.NameLocalFile,
-				Options: map[string]interface{}{engine.LocalFileOptionSavePath: "saveDir", engine.LocalFileOptionOverwrite: false}}},
+				Options: map[string]string{engine.LocalFileOptionSavePath: "saveDir", engine.LocalFileOptionOverwrite: "false"}}},
 	}
 
 	defer os.RemoveAll("btest.log")
@@ -52,7 +50,7 @@ func TestBackup(t *testing.T) {
 	go b.Run(finish)
 
 	id := <-finish
-	assert.Equal(id, b.Job.ID)
+	assert.Equal(id, b.job.ID)
 
 	fdata, err := ioutil.ReadFile("btest.log")
 	if !assert.Nil(err) {
@@ -80,8 +78,9 @@ func TestBuildBackupFileList(t *testing.T) {
 	assert := assert.New(t)
 
 	c := make(chan struct{})
+	errc := make(chan error, 20)
 	path := model.Path{Root: "test"}
-	in, errc := buildBackupFileList(c, []model.Path{path})
+	in := buildBackupFileList(c, []model.Path{path}, errc)
 	fCount := 0
 	wg := &sync.WaitGroup{}
 	wg.Add(1)
@@ -93,13 +92,17 @@ func TestBuildBackupFileList(t *testing.T) {
 	}()
 
 	wg.Wait()
-	e := <-errc
-	assert.Nil(e)
+	close(errc)
+	ecount := 0
+	for range errc {
+		ecount++
+	}
+	assert.Equal(0, ecount)
 	assert.Equal(20, fCount)
 
 	fCount = 0
-
-	in, _ = buildBackupFileList(c, []model.Path{path})
+	errc = make(chan error, 20)
+	in = buildBackupFileList(c, []model.Path{path}, errc)
 	wg = &sync.WaitGroup{}
 	wg.Add(1)
 	go func() {

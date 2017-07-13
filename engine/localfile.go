@@ -57,26 +57,23 @@ func (e *LocalFile) SaveOptions() []Option {
 }
 
 // ConfigureBackup options for where to save the files
-func (e *LocalFile) ConfigureSave(options map[string]interface{}) error {
+func (e *LocalFile) ConfigureSave(options map[string]string) error {
 	for k, v := range options {
 		switch strings.ToLower(k) {
 
 		case strings.ToLower(LocalFileOptionSavePath):
-			vString, ok := v.(string)
-			if !ok {
-				return goblerr.New("Invalid option", ErrorInvalidOptionValue, fmt.Sprintf("%s must be a string", LocalFileOptionSavePath))
-			}
-			if err := os.MkdirAll(vString, 0744); err != nil {
+			if err := os.MkdirAll(v, 0744); err != nil {
 				return goblerr.New("Configuration failed", errorAccessSavePath, fmt.Sprintf("unable to create or access %s (%s)", LocalFileOptionSavePath, err))
 			}
-			e.savePath = vString
+			e.savePath = v
 
 		case strings.ToLower(LocalFileOptionOverwrite):
-			vBool, ok := v.(bool)
-			if !ok {
-				return goblerr.New("Invalid option", ErrorInvalidOptionValue, fmt.Sprintf("%s must be a bool", LocalFileOptionOverwrite))
+			if v != "true" && v != "false" {
+				return goblerr.New("Invalid option", ErrorInvalidOptionValue, LocalFileOptionOverwrite+" must true or false")
 			}
-			e.overWrite = vBool
+			if v == "true" {
+				e.overWrite = true
+			}
 		}
 	}
 
@@ -172,28 +169,25 @@ func (e *LocalFile) RestoreOptions() []Option {
 }
 
 // ConfigureRestore configures the necessary options to run a local disk restore
-func (e *LocalFile) ConfigureRestore(options map[string]interface{}) error {
+func (e *LocalFile) ConfigureRestore(options map[string]string) error {
 	oProvided := false
 	rpProvided := false
 	for k, v := range options {
 		switch strings.ToLower(k) {
 		case strings.ToLower(LocalFileOptionOverwrite):
-			if vBool, ok := v.(bool); !ok {
-				return goblerr.New("Invalid option", ErrorInvalidOptionValue, LocalFileOptionOverwrite+" must be a bool")
-			} else {
-				e.overWrite = vBool
-				oProvided = true
+			if v != "true" && v != "false" {
+				return goblerr.New("Invalid option", ErrorInvalidOptionValue, LocalFileOptionOverwrite+" must true or false")
 			}
+			if v == "true" {
+				e.overWrite = true
+			}
+			oProvided = true
 		case strings.ToLower(LocalFileOptionRestorePath):
-			if vString, ok := v.(string); !ok {
-				return goblerr.New("Invalid option", ErrorInvalidOptionValue, LocalFileOptionRestorePath+" must be a string")
-			} else {
-				if err := os.MkdirAll(vString, 0744); err != nil {
-					return goblerr.New("Configuration failed", errorAccessRestorePath, fmt.Sprintf("unable to create or access %s (%s)", LocalFileOptionRestorePath, err))
-				}
-				e.restorePath = vString
-				rpProvided = true
+			if err := os.MkdirAll(v, 0744); err != nil {
+				return goblerr.New("Configuration failed", errorAccessRestorePath, fmt.Sprintf("unable to create or access %s (%s)", LocalFileOptionRestorePath, err))
 			}
+			e.restorePath = v
+			rpProvided = true
 		}
 	}
 

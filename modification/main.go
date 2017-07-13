@@ -19,7 +19,7 @@ type Definition struct {
 	// Name of the modifyer to use
 	Name string `json:"name"`
 	// Options to configure the modifyer
-	Options map[string]interface{} `json:"options"`
+	Options map[string]string `json:"options"`
 }
 
 // Option represents a value that can be used to configure a modifyer
@@ -45,7 +45,7 @@ type Modifyer interface {
 	// Options are the avaialble configuration option definitions
 	Options() []Option
 	// Configure sets the options for the modifyer
-	Configure(options map[string]interface{}) error
+	Configure(options map[string]string) error
 	// Direction sets the direction either forward or back for the modification
 	Direction(direction int)
 }

@@ -76,6 +76,8 @@ func SaveConfig(cs config.Store, env map[string]string) error {
 	case "leveldb":
 		l := &leveldb.Leveldb{}
 		err = l.SaveConfig(cs, env)
+	default:
+		err = errors.New("Invalid DB driver specified")
 	}
 
 	return err

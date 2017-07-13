@@ -12,10 +12,6 @@ import (
 	"github.com/sethjback/gobl/config"
 )
 
-type key int
-
-const Config key = 0
-
 type emailConfig struct {
 	To             string
 	From           string
@@ -25,6 +21,8 @@ type emailConfig struct {
 	Password       string
 	Authentication bool
 }
+
+var conf *emailConfig
 
 func SaveConfig(cs config.Store, env map[string]string) error {
 	ec := &emailConfig{}
@@ -47,20 +45,12 @@ func SaveConfig(cs config.Store, env map[string]string) error {
 		}
 	}
 
-	cs.Add(Config, ec)
-	return nil
-}
-
-func configFromStore(cs config.Store) *emailConfig {
-	if ec, ok := cs.Get(Config); ok {
-		return ec.(*emailConfig)
-	}
+	conf = ec
 	return nil
 }
 
 // SendEmail sends an email
-func SendEmail(cs config.Store, body string, subject string) error {
-	conf := configFromStore(cs)
+func SendEmail(body string, subject string) error {
 	if conf == nil {
 		return errors.New("No email config")
 	}

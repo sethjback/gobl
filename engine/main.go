@@ -35,7 +35,7 @@ type Definition struct {
 	// Name of the engine
 	Name string `json:"name"`
 	// Options used to configure it
-	Options map[string]interface{} `json:"options"`
+	Options map[string]string `json:"options"`
 }
 
 // Saver is the interface an engine needs to satisfy for saving (backing up) data
@@ -52,7 +52,7 @@ type Saver interface {
 	// BackupOptions available to configure the engine
 	SaveOptions() []Option
 	// ConfigureBackup sets the appropriate options
-	ConfigureSave(options map[string]interface{}) error
+	ConfigureSave(options map[string]string) error
 }
 
 // Restorer is the interface an engine needs to satisfy for restoring data
@@ -67,7 +67,7 @@ type Restorer interface {
 	// RestoreOptions available to configure the engine
 	RestoreOptions() []Option
 	// ConfigureRestore sets the appropriate options
-	ConfigureRestore(map[string]interface{}) error
+	ConfigureRestore(map[string]string) error
 }
 
 // BuildSavers returns a slice of configured savers

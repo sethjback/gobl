@@ -14,18 +14,16 @@ service Agent {
   // guarantees any Restore Job related calls from the Coordinator will succeed.
   rpc Restore(JobDefinition) returns (ReturnMessage) {}
 
-  // RestoreFile streams the individual files to restore
-  // the Coordinator will stream individual file signatures previously recorded
-  // from a backup job. The agent should queue these requests and run the restores
-  // in parallel according to the job definition.
-  rpc RestoreFile(stream FileRequest) returns (ReturnMessage) {}
-
   // Terminate the job
   // agents should gracefully terminate any work currently associated with the job
   // before returning. Any queues dealing with outstanding work should be emptied,
   // but ongoing notification about already complete files
   // (i.e. calls to the Coordinator File call) should continue until acknowledged.
   rpc Cancel(JobDefinition) returns (ReturnMessage) {}
+
+  // State of the job
+  // if agents are currently running a job, they should return the
+  rpc State(StateRequest) returns (JobState) {}
 }
 
 service Coordinator {
@@ -34,9 +32,15 @@ service Coordinator {
   // e.g. completely backed up or restored.
   rpc File(stream FileRequest) returns (ReturnMessage) {}
 
-  // Finish indicates all work for the particular job definition has been completed
-  // by the agent. Any additional calls related to the particular definition will fail
-  rpc Finish(JobDefinition) returns (ReturnMessage) {}
+  // Restore streams the individual files to restore
+	// the Coordinator will stream individual file signatures previously recorded
+	// from a backup job. The agent should queue and run the restores
+	// in parallel according to the job definition. Once the file is processed
+	// the agent should update the status via the File call
+  rpc Restore(RestoreRequest) returns (stream FileRequest){}
+
+  // State allows the agent to push job state to the coordinator
+  rpc State(JobState) returns (ReturnMessage) {}
 }
 
 message ReturnMessage {
@@ -45,6 +49,39 @@ message ReturnMessage {
 
   // code for the particular call
   string code = 2;
+}
+
+enum State{
+ DISCOVERY = 0;
+ RUNNING = 1;
+ NOTIFYING = 3;
+ CANCELED= 4;
+ FAILED = 5;
+ FINISHED = 6;
+ NOTFOUND = 7;
+}
+
+message StateRequest {
+  string id = 1;
+}
+
+// JobState is for communicating basic job state from the agent to the coordinator
+message JobState {
+  // id of the job to update
+ string id = 1;
+
+ // message is a user friendly status message
+ string message = 2;
+
+ // state
+ State state = 3;
+
+ int32 totalFiles = 4;
+ int32 completedFiles = 5;
+}
+
+message RestoreRequest{
+  string id = 1;
 }
 
 // JobDefinition contains all the data necessary to start a job
@@ -93,11 +130,14 @@ message Option {
   string value = 2;
 }
 
-
 message FileRequest {
   string jobId = 1;
 
   File file  = 2;
+
+  State state = 3;
+
+  string message = 4;
 }
 
 message File {

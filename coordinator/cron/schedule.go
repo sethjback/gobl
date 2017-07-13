@@ -1,4 +1,4 @@
-package manager
+package cron
 
 import (
 	"github.com/google/uuid"
@@ -6,18 +6,17 @@ import (
 	"github.com/sethjback/gobl/model"
 )
 
-// Implements
 type ScheduledJob struct {
 	Schedule model.Schedule `json:"schedule"`
 }
 
 func (s *ScheduledJob) Run() {
-	jdef, err := gDb.GetJobDefinition(s.Schedule.JobDefinitionID)
+	/*jdef, err := db.Get().GetJobDefinition(s.Schedule.JobDefinitionID)
 	if err != nil {
 		//TODO: log
 	}
 
-	a, err := gDb.GetAgent(s.Schedule.AgentID)
+	a, err := db.Get().GetAgent(s.Schedule.AgentID)
 	if err != nil {
 		//TODO: log
 	}
@@ -26,7 +25,7 @@ func (s *ScheduledJob) Run() {
 
 	if err != nil {
 		//TODO: log
-	}
+	}*/
 }
 
 func NewSchedule(s model.Schedule) (string, error) {
@@ -37,12 +36,11 @@ func NewSchedule(s model.Schedule) (string, error) {
 		return "", err
 	}
 
-	if err = gDb.SaveSchedule(s); err != nil {
+	if err = db.SaveSchedule(s); err != nil {
 		return "", err
 	}
 
-	schedules.Stop()
-	err = initCron()
+	cronHup <- struct{}{}
 	return s.ID, err
 }
 
@@ -52,22 +50,31 @@ func UpdateSchedule(s model.Schedule) error {
 		return err
 	}
 
-	if err = gDb.SaveSchedule(s); err != nil {
+	if err = db.SaveSchedule(s); err != nil {
 		return err
 	}
 
-	schedules.Stop()
-	return initCron()
+	cronHup <- struct{}{}
+	return nil
 }
 
 func DeleteSchedule(id string) error {
-	return gDb.DeleteSchedule(id)
+	err := db.DeleteSchedule(id)
+	if err != nil {
+		return err
+	}
+	cronHup <- struct{}{}
+	return nil
 }
 
 func ScheduleList() ([]model.Schedule, error) {
-	return gDb.ScheduleList()
+	return db.ScheduleList()
 }
 
-func CronSchedules() []*cron.Entry {
-	return schedules.Entries()
+func Active() []*cron.Entry {
+	active := make([]*cron.Entry, 0)
+	if schedules != nil {
+		active = schedules.Entries()
+	}
+	return active
 }

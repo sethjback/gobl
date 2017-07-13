@@ -17,16 +17,16 @@ func TestLogger(t *testing.T) {
 
 	l := Logger{}
 
-	err := l.ConfigureSave(map[string]interface{}{"asdf": ""})
+	err := l.ConfigureSave(map[string]string{"asdf": ""})
 	assert.NotNil(err)
 
-	err = l.ConfigureSave(map[string]interface{}{"logPath": true})
+	err = l.ConfigureSave(map[string]string{"logPath": "true"})
 	assert.NotNil(err)
 
-	err = l.ConfigureSave(map[string]interface{}{"overwrite": 123})
+	err = l.ConfigureSave(map[string]string{"overwrite": "123"})
 	assert.NotNil(err)
 
-	err = l.ConfigureSave(map[string]interface{}{"logPath": "./testLog", "overwrite": false})
+	err = l.ConfigureSave(map[string]string{"logPath": "./testLog", "overwrite": "false"})
 	assert.Nil(err)
 
 	dataToSave := []byte("This is some test data to save that really should be saved")
@@ -54,7 +54,7 @@ func TestLogger(t *testing.T) {
 	assert.Equal(len(dataToSave), int(lline.Bytes))
 
 	// make sure we don't overwrite
-	err = l.ConfigureSave(map[string]interface{}{"logPath": "./testLog", "overwrite": false})
+	err = l.ConfigureSave(map[string]string{"logPath": "./testLog", "overwrite": "false"})
 	assert.Nil(err)
 
 	dataToSave2 := []byte("This is some test data to save that really should be saved and should be longer")
@@ -88,7 +88,7 @@ func TestLogger(t *testing.T) {
 	}
 
 	// make sure we don't overwrite
-	err = l.ConfigureSave(map[string]interface{}{"logPath": "./testLog", "overwrite": true})
+	err = l.ConfigureSave(map[string]string{"logPath": "./testLog", "overwrite": "true"})
 	assert.Nil(err)
 
 	l.Save(bytes.NewReader(dataToSave), file, errc)

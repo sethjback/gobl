@@ -3,7 +3,7 @@ package apihandler
 import (
 	"github.com/julienschmidt/httprouter"
 	"github.com/sethjback/gobl/certificates"
-	"github.com/sethjback/gobl/coordinator/manager"
+	"github.com/sethjback/gobl/coordinator/grpcserver"
 	"github.com/sethjback/gobl/gobldb/errors"
 	"github.com/sethjback/gobl/goblerr"
 	"github.com/sethjback/gobl/httpapi"
@@ -26,16 +26,24 @@ func newCAKey(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
 		}
 	}
 
-	err = manager.NewCAKey(k)
+	if k == nil {
+		k, err = certificates.NewCACertificate()
+		if err != nil {
+			return httpapi.Response{Error: err, HTTPCode: 400}
+		}
+	}
+
+	err = db.SaveKey("CA", *k)
 	if err != nil {
 		return httpapi.Response{Error: err, HTTPCode: 400}
 	}
 
+	grpcserver.GRPCHup()
 	return httpapi.Response{HTTPCode: 201}
 }
 
 func getCertificate(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
-	k, err := manager.GetCAKey()
+	k, err := db.GetKey("CA")
 
 	if err != nil {
 		gerr := err.(*goblerr.Error)

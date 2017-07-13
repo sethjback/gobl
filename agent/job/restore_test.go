@@ -10,7 +10,6 @@ import (
 	"testing"
 
 	"github.com/google/uuid"
-	"github.com/sethjback/gobl/agent/coordinator"
 	"github.com/sethjback/gobl/engine"
 	"github.com/sethjback/gobl/files"
 	"github.com/sethjback/gobl/model"
@@ -21,15 +20,13 @@ import (
 func TestRestore(t *testing.T) {
 	assert := assert.New(t)
 
-	r := &Restore{
-		Job: model.Job{
+	r := &restore{
+		job: model.Job{
 			ID:   uuid.New().String(),
 			Meta: &model.JobMeta{},
 		},
-		stateM:      &sync.Mutex{},
-		Coordinator: &coordinator.Coordinator{Address: "127.0.0.1"},
-		Notifier:    newTestNotifier(),
-		MaxWorkers:  1,
+		stateM:     &sync.Mutex{},
+		MaxWorkers: 1,
 	}
 
 	f, err := createTestRestoreFile()
@@ -37,21 +34,22 @@ func TestRestore(t *testing.T) {
 		return
 	}
 
+	r.coordClient = &tgrpc{rclient: &rclient{files: []*files.File{f}}}
+
 	defer os.Remove("rtest.log")
 	// local file save name will always be the same as the name is based on the fileSig
 	defer os.Remove("435f25614eb9b7f51ab7921c5ff09992")
 
-	r.Job.Definition = &model.JobDefinition{
-		Files: []files.File{*f},
+	r.job.Definition = &model.JobDefinition{
 		Modifications: []modification.Definition{
-			modification.Definition{Name: "compress", Options: map[string]interface{}{"level": 5}}},
+			modification.Definition{Name: "compress", Options: map[string]string{"level": "5"}}},
 		To: []engine.Definition{
 			engine.Definition{
 				Name:    engine.NameLogger,
-				Options: map[string]interface{}{engine.LoggerOptionLogPath: "rtest.log", engine.LoggerOptionOverwrite: false}}},
+				Options: map[string]string{engine.LoggerOptionLogPath: "rtest.log", engine.LoggerOptionOverwrite: "true"}}},
 		From: &engine.Definition{
 			Name:    engine.NameLocalFile,
-			Options: map[string]interface{}{engine.LocalFileOptionSavePath: "./", engine.LocalFileOptionOverwrite: false}},
+			Options: map[string]string{engine.LocalFileOptionSavePath: "./", engine.LocalFileOptionOverwrite: "false"}},
 	}
 
 	finish := make(chan string)
@@ -59,7 +57,7 @@ func TestRestore(t *testing.T) {
 	go r.Run(finish)
 
 	id := <-finish
-	assert.Equal(id, r.Job.ID)
+	assert.Equal(id, r.job.ID)
 
 	fdata, err := ioutil.ReadFile("rtest.log")
 	if !assert.Nil(err) {
@@ -97,7 +95,7 @@ func createTestRestoreFile() (*files.File, error) {
 	}
 
 	le := &engine.LocalFile{}
-	le.ConfigureSave(map[string]interface{}{engine.LocalFileOptionSavePath: "./", engine.LocalFileOptionOverwrite: false})
+	le.ConfigureSave(map[string]string{engine.LocalFileOptionSavePath: "./", engine.LocalFileOptionOverwrite: "false"})
 	errc := make(chan error, 1)
 
 	file := files.File{

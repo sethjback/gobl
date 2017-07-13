@@ -54,7 +54,7 @@ func (t *TestEngine) Name() string {
 func (t *TestEngine) SaveOptions() []Option {
 	return nil
 }
-func (t *TestEngine) ConfigureSave(map[string]interface{}) error {
+func (t *TestEngine) ConfigureSave(map[string]string) error {
 	return nil
 }
 
@@ -83,7 +83,7 @@ func (t *TestEngine) ShouldRestore(file files.File) (bool, error) {
 func (t *TestEngine) RestoreOptions() []Option {
 	return nil
 }
-func (t *TestEngine) ConfigureRestore(map[string]interface{}) error {
+func (t *TestEngine) ConfigureRestore(map[string]string) error {
 	return nil
 }
 

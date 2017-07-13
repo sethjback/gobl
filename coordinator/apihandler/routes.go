@@ -68,11 +68,6 @@ var Routes = []httpapi.Route{
 		Handler: newJob},
 
 	httpapi.Route{
-		Method:  "POST",
-		Path:    "/jobs/:id/files",
-		Handler: addJobFile},
-
-	httpapi.Route{
 		Method:  "GET",
 		Path:    "/jobs",
 		Handler: jobList},

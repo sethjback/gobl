@@ -14,16 +14,16 @@ func TestLocalFile(t *testing.T) {
 	assert := assert.New(t)
 	l := LocalFile{}
 
-	err := l.ConfigureSave(map[string]interface{}{"asdf": ""})
+	err := l.ConfigureSave(map[string]string{"asdf": ""})
 	assert.NotNil(err)
 
-	err = l.ConfigureSave(map[string]interface{}{"savePath": true})
+	err = l.ConfigureSave(map[string]string{"savePath": "true"})
 	assert.NotNil(err)
 
-	err = l.ConfigureSave(map[string]interface{}{"overwrite": 123})
+	err = l.ConfigureSave(map[string]string{"overwrite": "123"})
 	assert.NotNil(err)
 
-	err = l.ConfigureSave(map[string]interface{}{"savePath": "./", "overwrite": false})
+	err = l.ConfigureSave(map[string]string{"savePath": "./", "overwrite": "false"})
 	assert.Nil(err)
 
 	file := files.File{Signature: files.Signature{Path: "/the/test/path/test1"}}
