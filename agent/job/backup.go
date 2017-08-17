@@ -39,10 +39,19 @@ func (b *backup) Cancel() {
 	b.stateM.Unlock()
 }
 
-func (b *backup) SetState(state string) {
+func (b *backup) SetState(state, message string) {
 	b.stateM.Lock()
 	b.job.Meta.State = state
 	b.stateM.Unlock()
+	_, serr := b.coordClient.State(context.Background(), &pb.JobState{
+		Id:         b.job.ID,
+		Message:    message,
+		State:      pb.State(pb.State_value[state]),
+		TotalFiles: int32(b.getTotal()),
+	})
+	if serr != nil {
+		fmt.Printf("Error: %s\n", serr.Error())
+	}
 }
 
 func (b *backup) GetState() string {
@@ -64,9 +73,23 @@ func (b *backup) addComplete(num int) {
 	b.stateM.Unlock()
 }
 
+func (b *backup) getTotal() int {
+	b.stateM.Lock()
+	i := b.job.Meta.Total
+	b.stateM.Unlock()
+	return i
+}
+
+func (b *backup) getComplete() int {
+	b.stateM.Lock()
+	i := b.job.Meta.Complete
+	b.stateM.Unlock()
+	return i
+}
+
 // Run for jobber interface
 func (b *backup) Run(finished chan<- string) {
-	b.SetState(model.StateRunning)
+	b.SetState(model.StateRunning, "started")
 	b.cancel = make(chan struct{})
 	b.job.Meta.Start = time.Now()
 
@@ -74,27 +97,31 @@ func (b *backup) Run(finished chan<- string) {
 	errc := make(chan error)
 	wg := &sync.WaitGroup{}
 
-	paths := buildBackupFileList(b.cancel, b.job.Definition.Paths, errc)
-
 	q := gowork.NewQueue(100, b.MaxWorkers)
 	q.Start(b.MaxWorkers)
+	
+	paths := buildBackupFileList(b.cancel, b.job.Definition.Paths, errc)
 
-	wg.Add(1)
 	// range over the walked files and send them to the work queue
+	wg.Add(1)
 	go func() {
 		defer wg.Done()
 		totalFiles := 0
+		b.SetState(pb.State_DISCOVERY.String(), "discovering files")
 		for path := range paths {
 			q.AddWork(work.Backup{File: path, Modifications: b.job.Definition.Modifications, Engines: b.job.Definition.To})
 			totalFiles++
 			if totalFiles > 10 {
 				b.addTotal(totalFiles)
 				totalFiles = 0
+				b.SetState(pb.State_DISCOVERY.String(), "discovering files")
 			}
 		}
 		b.addTotal(totalFiles)
 		// close the input channel into the work queue
 		q.Finish()
+
+		b.SetState(pb.State_RUNNING.String(), "processing files")
 	}()
 
 	wg.Add(1)
@@ -114,6 +141,7 @@ func (b *backup) Run(finished chan<- string) {
 			}
 		}
 		b.addComplete(processedFiles)
+		b.SetState(pb.State_NOTIFYING.String(), "notifying")
 	}()
 
 	wg.Add(1)
@@ -183,6 +211,7 @@ func (b *backup) Run(finished chan<- string) {
 		<-done
 	case <-done:
 		//finished!
+		b.SetState(pb.State_FINISHED.String(), "Job's done!")
 	}
 
 	// notify our manager that we are done

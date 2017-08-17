@@ -5,42 +5,42 @@ package goblgrpc;
 service Agent {
   // Backup starts a backup job on the agent
   // this call should validate, configure, then start the job
-  // agents can assume the job has been successfully create in the Coordinator
+  // agents can assume the job has been successfully created on the Coordinator
   // and thus all calls back to Backup Job related Coordinator endpoints will succeed.
-  rpc Backup(JobDefinition) returns (ReturnMessage) {}
+  rpc Backup(JobDefinition) returns(ReturnMessage) {}
 
   // Restore starts a restore job.
   // this job should validate and configure the job. A success return from this call
   // guarantees any Restore Job related calls from the Coordinator will succeed.
-  rpc Restore(JobDefinition) returns (ReturnMessage) {}
+  rpc Restore(JobDefinition) returns(ReturnMessage) {}
 
   // Terminate the job
   // agents should gracefully terminate any work currently associated with the job
   // before returning. Any queues dealing with outstanding work should be emptied,
   // but ongoing notification about already complete files
   // (i.e. calls to the Coordinator File call) should continue until acknowledged.
-  rpc Cancel(JobDefinition) returns (ReturnMessage) {}
+  rpc Cancel(JobDefinition) returns(ReturnMessage) {}
 
   // State of the job
   // if agents are currently running a job, they should return the
-  rpc State(StateRequest) returns (JobState) {}
+  rpc State(StateRequest) returns(JobState) {}
 }
 
 service Coordinator {
   // File accepts data about completed job files
   // FileRequests sent in this call should only represent files that have been completed
   // e.g. completely backed up or restored.
-  rpc File(stream FileRequest) returns (ReturnMessage) {}
+  rpc File(stream FileRequest) returns(ReturnMessage) {}
 
   // Restore streams the individual files to restore
 	// the Coordinator will stream individual file signatures previously recorded
 	// from a backup job. The agent should queue and run the restores
 	// in parallel according to the job definition. Once the file is processed
 	// the agent should update the status via the File call
-  rpc Restore(RestoreRequest) returns (stream FileRequest){}
+  rpc Restore(RestoreRequest) returns(stream FileRequest){}
 
   // State allows the agent to push job state to the coordinator
-  rpc State(JobState) returns (ReturnMessage) {}
+  rpc State(JobState) returns(ReturnMessage) {}
 }
 
 message ReturnMessage {

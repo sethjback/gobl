@@ -44,9 +44,13 @@ func main() {
 		os.Exit(1)
 	}
 
+	fmt.Printf("GRPC server started\n")
+
 	signals := make(chan os.Signal, 1)
 	signal.Notify(signals, os.Interrupt)
 	<-signals
+
+	fmt.Println("shutting down")
 
 	job.Shutdown()
 	grpcserver.Shutdown()

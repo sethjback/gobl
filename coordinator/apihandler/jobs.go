@@ -144,8 +144,6 @@ func newJob(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
 
 	aClient.ClientConn.Close()
 
-	fmt.Printf("%+v\n%+v\n", rmsg, err)
-
 	if err != nil {
 		job.Meta.Message = err.Error()
 		job.Meta.State = model.StateFailed
@@ -157,7 +155,7 @@ func newJob(r *httpapi.Request, ps httprouter.Params) httpapi.Response {
 		job.Meta.Message = rmsg.Message
 		job.Meta.State = model.StateFailed
 		db.SaveJob(job)
-		return httpapi.Response{Error: err, HTTPCode: 400}
+		return httpapi.Response{Error: errors.New(rmsg.String()), HTTPCode: 400}
 	}
 
 	return httpapi.Response{Data: map[string]interface{}{"id": job.ID}, HTTPCode: 201}

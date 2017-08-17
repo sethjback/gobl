@@ -2,9 +2,13 @@ package grpcserver
 
 import (
 	"crypto/tls"
+	"errors"
 	"fmt"
 	"io"
 	"net"
+	"time"
+
+	"github.com/sethjback/gobl/coordinator/email"
 
 	"github.com/sethjback/gobl/files"
 	"github.com/sethjback/gobl/gobldb"
@@ -96,11 +100,42 @@ func (s *server) File(stream pb.Coordinator_FileServer) error {
 }
 
 func (s *server) Restore(in *pb.RestoreRequest, stream pb.Coordinator_RestoreServer) error {
+	job, err := db.GetJob(in.GetId())
+	if err != nil {
+		return err
+	}
+
+	for _, f := range job.Definition.Files {
+		stream.Send(&pb.FileRequest{
+			JobId: job.ID,
+			File:  convertFromFile(f),
+		})
+	}
+
 	return nil
 }
 
 func (s *server) State(ctx context.Context, fr *pb.JobState) (*pb.ReturnMessage, error) {
-	fmt.Printf("Job state: %+v\n\n", fr)
+	job, err := db.GetJob(fr.GetId())
+	if err != nil {
+		return &pb.ReturnMessage{Message: err.Error(), Code: "GetJobFailed"}, errors.New("Unable to find job")
+	}
+	job.Meta.Total = int(fr.TotalFiles)
+	job.Meta.Message = fr.Message
+	job.Meta.State = fr.GetState().String()
+	if fr.GetState() == pb.State_FINISHED || fr.GetState() == pb.State_FAILED {
+		job.Meta.End = time.Now().UTC()
+	}
+
+	db.SaveJob(*job)
+
+	if (fr.State == pb.State_FINISHED || fr.State == pb.State_FAILED) && email.Configured() {
+		err = email.StateNotification(*job.Meta, job.ID, "GOBL Job Update")
+		if err != nil {
+			fmt.Println(err)
+		}
+	}
+
 	return &pb.ReturnMessage{Message: "success", Code: "you rock"}, nil
 }
 
@@ -119,6 +154,23 @@ func convertFile(pbFile *pb.File) files.File {
 	}
 
 	return file
+}
+
+func convertFromFile(f files.File) *pb.File {
+	pbFile := &pb.File{}
+	pbFile.Signature = &pb.Signature{
+		Path:          f.Signature.Path,
+		Modifications: f.Signature.Modifications,
+		Hash:          f.Signature.Hash,
+	}
+
+	pbFile.Meta = &pb.Meta{
+		Mode: f.Mode,
+		Uid:  int32(f.UID),
+		Gid:  int32(f.GID),
+	}
+
+	return pbFile
 }
 
 func SaveConfig(cs config.Store, env map[string]string) error {

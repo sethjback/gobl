@@ -54,7 +54,8 @@ func Init() error {
 
 	s.grpcServer = grpc.NewServer(grpc.Creds(creds))
 	pb.RegisterAgentServer(s.grpcServer, s)
-	return s.grpcServer.Serve(lis)
+	go s.grpcServer.Serve(lis)
+	return nil
 }
 
 func Shutdown() {

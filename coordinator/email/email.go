@@ -1,16 +1,34 @@
 package email
 
 import (
+	"bytes"
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"html/template"
 	"net"
 	"net/smtp"
 	"net/url"
 	"strings"
 
 	"github.com/sethjback/gobl/config"
+	"github.com/sethjback/gobl/model"
 )
+
+var metaTemplate = `
+	Job state notification for: {{.ID}}
+
+	State: {{.State}}
+	Message: {{.Message}}
+
+	Start: {{.Start}}
+	End: {{.End}}
+	Run Time: {{.Runtime}}
+
+	Completed: {{.Complete}}
+	Errors: {{.Errors}}
+	Total Files: {{.Total}}
+`
 
 type emailConfig struct {
 	To             string
@@ -47,6 +65,36 @@ func SaveConfig(cs config.Store, env map[string]string) error {
 
 	conf = ec
 	return nil
+}
+
+func Configured() bool {
+	return conf != nil
+}
+
+func StateNotification(state model.JobMeta, id, subject string) error {
+	tmpl, err := template.New("metaTemplate").Parse(metaTemplate)
+	if err != nil {
+		return err
+	}
+
+	buff := bytes.NewBuffer(nil)
+
+	err = tmpl.Execute(buff, map[string]interface{}{
+		"State":    state.State,
+		"Start":    state.Start,
+		"End":      state.End,
+		"Message":  state.Message,
+		"Total":    state.Total,
+		"Complete": state.Complete,
+		"Errors":   state.Errors,
+		"ID":       id,
+	})
+
+	if err != nil {
+		return err
+	}
+
+	return SendEmail(buff.String(), subject)
 }
 
 // SendEmail sends an email
